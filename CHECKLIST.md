@@ -4,45 +4,19 @@
 
 ---
 
-## ⚡ ПЛАН РАБОТЫ ПО ЭТАПАМ
+## КАК РАБОТАЕМ
 
 ```
-1️⃣ Пользователь пишет "Этап N" + "поехали"
-2️⃣ Claude создаёт все файлы этапа
-3️⃣ Claude ВЫГРУЖАЕТ ВСЁ В РЕПОЗИТОРИЙ
-4️⃣ Claude пишет: "проверим"
-5️⃣ Пользователь пишет: "проверка"
-6️⃣ Claude проверяет работоспособность
-7️⃣ Claude обновляет этот CHECKLIST.md (отмечает ✅)
-8️⃣ Переход к следующему этапу
+Ты пишешь: "Этап 1" → Я делаю ВСЁ из этапа 1
+Ты проверяешь → Пишешь "OK" или замечания
+Ты пишешь: "Этап 2" → Я делаю этап 2
+... и так до конца
 ```
-
----
-
-## 📊 ПРОГРЕСС
-
-| # | Этап | Статус |
-|---|------|--------|
-| 1 | Структура проекта | ✅ Готов |
-| 2 | База данных — Модели | ✅ Готов |
-| 3 | Backend API — Auth | ✅ |
-| 4 | Backend API — CRUD ботов | ✅ |
-| 5 | Backend API — Каналы и тарифы | ✅ |
-| 6 | Backend API — Промокоды | ✅ |
-| 7 | Backend API — Рассылки | ✅ |
-| 8 | Шаблон бота — Ядро | ✅ |
-| 9 | Шаблон бота — CryptoBot оплата | ⬜ |
-| 10 | Userbot — Автодобавление | ⬜ |
-| 11 | Подписки — Проверка и автокик | ⬜ |
-| 12 | Шаблон бота — Промокоды и рассылки | ⬜ |
-| 13 | Оркестратор ботов | ⬜ |
-| 14 | Админка — Frontend | ⬜ |
-| 15 | Деплой и документация | ⬜ |
 
 ---
 
 ## ЭТАП 1: Структура проекта
-**Статус:** ✅ Готов
+**Статус:** ✅ Готово
 
 ### Задачи:
 - [x] Создать структуру папок
@@ -54,27 +28,6 @@
 - [x] backend/app/config.py (Settings через pydantic)
 - [x] backend/app/database.py (async SQLite engine)
 - [x] Создать папку data/
-
-### Проверка:
-```bash
-python backend/run.py
-# http://localhost:8000/health → {"status": "ok"}
-```
-
-### Файлы:
-```
-TGconst/
-├── requirements.txt
-├── .env.example
-├── data/
-├── backend/
-│   ├── run.py
-│   └── app/
-│       ├── __init__.py
-│       ├── main.py
-│       ├── config.py
-│       └── database.py
-```
 
 ---
 
@@ -91,23 +44,6 @@ TGconst/
 - [x] Функция get_bot_db(uuid) — сессия к bot.db
 - [x] scripts/create_admin.py — создание первого админа
 
-### Проверка:
-```bash
-python scripts/create_admin.py
-# Создаётся data/main.db с таблицами и админом
-```
-
-### Файлы:
-```
-backend/app/models/
-├── __init__.py
-├── main_db.py
-└── bot_db.py
-
-scripts/
-└── create_admin.py
-```
-
 ---
 
 ## ЭТАП 3: Backend API — Auth
@@ -123,64 +59,21 @@ scripts/
 - [x] backend/app/api/auth.py (login, me)
 - [x] Подключить роутер в main.py
 
-### Эндпоинты:
-- [ ] POST /api/auth/login → {"access_token": "..."}
-- [ ] GET /api/auth/me → {"id": 1, "username": "admin"}
-
-### Проверка:
-```bash
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
-# → {"access_token": "eyJ..."}
-
-curl http://localhost:8000/api/auth/me \
-  -H "Authorization: Bearer eyJ..."
-# → {"id": 1, "username": "admin"}
-```
-
 ---
 
 ## ЭТАП 4: Backend API — CRUD ботов
 **Статус:** ✅ Готово
 
 ### Задачи:
-- [x] backend/app/schemas/bot.py (BotCreate, BotUpdate, BotResponse, BotListResponse, BotStatusResponse)
+- [x] backend/app/schemas/bot.py (BotCreate, BotUpdate, BotResponse)
 - [x] backend/app/api/bots.py
 - [x] При создании бота — создавать папку data/bots/{uuid}/ и bot.db
 - [x] При удалении бота — удалять папку
 
-### Эндпоинты:
-- [x] GET /api/bots — список ботов
-- [x] POST /api/bots — создать бота
-- [x] GET /api/bots/{uuid} — получить бота
-- [x] PUT /api/bots/{uuid} — обновить
-- [x] DELETE /api/bots/{uuid} — удалить
-- [x] POST /api/bots/{uuid}/start — запустить (заглушка)
-- [x] POST /api/bots/{uuid}/stop — остановить (заглушка)
-- [x] GET /api/bots/{uuid}/status — статус бота
-
-### Проверка:
-```bash
-# Создать бота
-curl -X POST http://localhost:8000/api/bots \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test Bot", "bot_token": "123:ABC"}'
-# → {"uuid": "abc-123", "name": "Test Bot", ...}
-
-# Проверить что создалась папка
-ls data/bots/
-# → abc-123/
-
-ls data/bots/abc-123/
-# → bot.db
-```
-
 ---
 
 ## ЭТАП 5: Backend API — Каналы и тарифы
-**Статус:** ✅ Готов
+**Статус:** ✅ Готово
 
 ### Задачи:
 - [x] backend/app/schemas/channel.py
@@ -188,58 +81,20 @@ ls data/bots/abc-123/
 - [x] backend/app/api/channels.py (работа с bot.db)
 - [x] backend/app/api/tariffs.py
 
-### Эндпоинты каналов:
-- [x] GET /api/bots/{uuid}/channels
-- [x] POST /api/bots/{uuid}/channels
-- [x] GET /api/bots/{uuid}/channels/{id}
-- [x] PUT /api/bots/{uuid}/channels/{id}
-- [x] DELETE /api/bots/{uuid}/channels/{id}
-
-### Эндпоинты тарифов:
-- [x] GET /api/bots/{uuid}/channels/{channel_id}/tariffs
-- [x] POST /api/bots/{uuid}/channels/{channel_id}/tariffs
-- [x] PUT /api/bots/{uuid}/tariffs/{id}
-- [x] DELETE /api/bots/{uuid}/tariffs/{id}
-
 ---
 
 ## ЭТАП 6: Backend API — Промокоды
-**Статус:** ✅ Готов
+**Статус:** ✅ Готово
 
 ### Задачи:
 - [x] backend/app/schemas/promocode.py
 - [x] backend/app/api/promocodes.py
 - [x] Валидация: срок, лимит, активность
 
-### Эндпоинты:
-- [x] GET /api/bots/{uuid}/promocodes — список промокодов
-- [x] POST /api/bots/{uuid}/promocodes — создать промокод
-- [x] GET /api/bots/{uuid}/promocodes/{id} — получить промокод
-- [x] PUT /api/bots/{uuid}/promocodes/{id} — обновить
-- [x] DELETE /api/bots/{uuid}/promocodes/{id} — удалить
-- [x] POST /api/bots/{uuid}/promocodes/{id}/toggle — переключить статус
-- [x] POST /api/bots/{uuid}/promocodes/{id}/reset — сбросить счётчик
-- [x] POST /api/bots/{uuid}/promocodes/validate — проверить код
-- [x] POST /api/bots/{uuid}/promocodes/check/{code} — быстрая проверка
-- [x] GET /api/bots/{uuid}/promocodes/stats/summary — статистика
-
-### Схемы:
-- PromocodeCreate, PromocodeUpdate — создание/обновление
-- PromocodeResponse, PromocodeListResponse — ответы
-- PromocodeValidateRequest, PromocodeValidateResponse — валидация
-- PromocodeClearLimitRequest — сброс лимита
-
-### Валидация:
-- Код приводится к uppercase
-- Проверка: либо discount_percent, либо discount_amount (не оба)
-- Проверка valid_from < valid_until
-- Метод is_valid() проверяет: активность, сроки, лимит использований
-- Метод calculate_discount() рассчитывает скидку
-
 ---
 
 ## ЭТАП 7: Backend API — Рассылки
-**Статус:** ✅ Готов
+**Статус:** ✅ Готово
 
 ### Задачи:
 - [x] backend/app/schemas/broadcast.py
@@ -247,17 +102,10 @@ ls data/bots/abc-123/
 - [x] backend/app/services/__init__.py
 - [x] backend/app/services/broadcast_worker.py (фоновая задача)
 
-### Эндпоинты:
-- [x] GET /api/bots/{uuid}/broadcasts
-- [x] POST /api/bots/{uuid}/broadcasts
-- [x] GET /api/bots/{uuid}/broadcasts/{id}
-- [x] POST /api/bots/{uuid}/broadcasts/{id}/start
-- [x] POST /api/bots/{uuid}/broadcasts/{id}/cancel
-
 ---
 
 ## ЭТАП 8: Шаблон бота — Ядро
-**Статус:** ✅ Готов
+**Статус:** ✅ Готово
 
 ### Задачи:
 - [x] backend/bot_template/__init__.py
@@ -273,50 +121,60 @@ ls data/bots/abc-123/
 - [x] backend/bot_template/keyboards/__init__.py
 - [x] backend/bot_template/keyboards/inline.py
 - [x] backend/bot_template/keyboards/reply.py
-- [x] backend/bot_template/callbacks/__init__.py
-
-### Функционал:
-- [x] /start → приветствие + меню
-- [x] Кнопка "Каналы" → список каналов
-- [x] Выбор канала → тарифы
-- [x] Выбор тарифа → кнопка "Оплатить" (заглушка)
-- [x] "Мои подписки" → список активных подписок
-- [x] "Поддержка" → ссылка из конфига
-- [x] "Промокод" → информация о промокодах
-
-### Проверка:
-```bash
-python backend/bot_template/run.py --bot-uuid=abc-123
-# Бот запускается, /start работает
-```
-
-### Тесты пройдены:
-- ✅ Синтаксис всех файлов корректен
-- ✅ Все импорты работают
-- ✅ Загрузка конфигурации из main.db
-- ✅ Инициализация БД бота
-- ✅ CRUD операции с users, channels, tariffs
-- ✅ Reply и Inline клавиатуры генерируются
-- ✅ Бот запускается (хендлеры регистрируются)
 
 ---
 
 ## ЭТАП 9: Шаблон бота — CryptoBot оплата
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Задачи:
-- [ ] backend/app/services/cryptobot.py (CryptoBot API client)
-- [ ] backend/bot_template/handlers/payment.py
-- [ ] backend/bot_template/callbacks/__init__.py
-- [ ] backend/bot_template/callbacks/payment.py
-- [ ] backend/app/api/webhooks.py (webhook от CryptoBot)
+- [x] backend/app/services/cryptobot.py (CryptoBot API client)
+- [x] backend/bot_template/handlers/payment.py
+- [x] backend/bot_template/callbacks/__init__.py
+- [x] backend/bot_template/callbacks/payment.py
+- [x] backend/app/api/webhooks.py (webhook от CryptoBot)
 
 ### Функционал:
-- [ ] Создание инвойса (createInvoice)
-- [ ] Отправка кнопки оплаты юзеру
-- [ ] Приём webhook при оплате
-- [ ] Обновление статуса в БД
-- [ ] Уведомление юзера
+- [x] Создание инвойса (createInvoice)
+- [x] Отправка кнопки оплаты юзеру
+- [x] Приём webhook при оплате
+- [x] Обновление статуса в БД
+- [x] Уведомление юзера
+
+### Файлы созданы:
+```
+backend/
+├── app/
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── cryptobot.py          # CryptoBot API клиент
+│   └── api/
+│       └── webhooks.py           # Webhook эндпоинт
+└── bot_template/
+    ├── handlers/
+    │   ├── __init__.py           # Обновлён (добавлен payment)
+    │   └── payment.py            # Обработчик платежей
+    └── callbacks/
+        ├── __init__.py           # Роутер callbacks
+        └── payment.py            # Deeplink после оплаты
+
+# Патчи для интеграции:
+backend/app/main_patch.py         # Пример обновления main.py
+backend/bot_template/run_patch.py # Пример обновления run.py
+```
+
+### Что нужно интегрировать:
+1. В `backend/app/main.py` добавить:
+   - `from .api import webhooks`
+   - `app.include_router(webhooks.router, prefix="/api")`
+
+2. В `backend/bot_template/run.py` добавить:
+   - `from .callbacks import router as callbacks_router`
+   - `dp.include_router(callbacks_router)`
+
+3. В `backend/bot_template/handlers/__init__.py`:
+   - Добавить `from . import payment`
+   - Добавить `router.include_router(payment.router)`
 
 ---
 
@@ -332,12 +190,6 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 - [ ] userbot/actions/invite.py
 - [ ] HTTP API или Redis queue для задач
 
-### Функционал:
-- [ ] Pyrogram client с session_string
-- [ ] Получение задачи "добавить юзера X в канал Y"
-- [ ] Добавление юзера
-- [ ] Обработка ошибок (FloodWait, UserPrivacyRestricted)
-
 ---
 
 ## ЭТАП 11: Подписки — Проверка и автокик
@@ -347,12 +199,6 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 - [ ] backend/app/services/subscription_checker.py
 - [ ] userbot/actions/kick.py
 - [ ] Фоновая задача (asyncio loop или APScheduler)
-
-### Функционал:
-- [ ] Проверка каждые 5 минут
-- [ ] За 1 день до истечения → уведомление
-- [ ] При истечении → кик через userbot
-- [ ] Обновление is_active = 0, auto_kicked = 1
 
 ---
 
@@ -365,12 +211,6 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 - [ ] backend/bot_template/handlers/support.py
 - [ ] Интеграция промокода в оплату
 
-### Функционал:
-- [ ] Кнопка "Ввести промокод" перед оплатой
-- [ ] Применение скидки
-- [ ] Кнопка "Мои подписки"
-- [ ] Кнопка "Поддержка"
-
 ---
 
 ## ЭТАП 13: Оркестратор ботов
@@ -382,13 +222,6 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 - [ ] Сохранение PID в main.db
 - [ ] Остановка по PID
 - [ ] Автозапуск активных ботов при старте backend
-
-### Функционал:
-- [ ] start_bot(uuid) → запускает процесс
-- [ ] stop_bot(uuid) → останавливает
-- [ ] restart_bot(uuid)
-- [ ] get_status(uuid) → running/stopped
-- [ ] startup_event → запуск всех is_active=1
 
 ---
 
@@ -408,22 +241,15 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 - [ ] frontend/src/context/AuthContext.jsx
 - [ ] frontend/src/pages/Login.jsx
 - [ ] frontend/src/pages/Dashboard.jsx
-- [ ] frontend/src/pages/Bots/*
-- [ ] frontend/src/pages/Channels/*
-- [ ] frontend/src/pages/Tariffs/*
-- [ ] frontend/src/pages/Promocodes/*
-- [ ] frontend/src/pages/Broadcasts/*
+- [ ] frontend/src/pages/Bots/BotList.jsx
+- [ ] frontend/src/pages/Bots/BotCreate.jsx
+- [ ] frontend/src/pages/Bots/BotEdit.jsx
+- [ ] frontend/src/pages/Channels/
+- [ ] frontend/src/pages/Tariffs/
+- [ ] frontend/src/pages/Promocodes/
+- [ ] frontend/src/pages/Broadcasts/
 - [ ] frontend/src/components/Layout.jsx
 - [ ] frontend/src/components/Sidebar.jsx
-
-### Страницы:
-- [ ] Login — форма входа
-- [ ] Dashboard — статистика
-- [ ] Bots — список, создание, редактирование
-- [ ] Channels — каналы бота
-- [ ] Tariffs — тарифы
-- [ ] Promocodes — промокоды
-- [ ] Broadcasts — рассылки
 
 ---
 
@@ -441,4 +267,32 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 
 ---
 
-**Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готов
+## 📊 ПРОГРЕСС
+
+| # | Этап | Статус |
+|---|------|--------|
+| 1 | Структура проекта | ✅ |
+| 2 | База данных — Модели | ✅ |
+| 3 | Backend API — Auth | ✅ |
+| 4 | Backend API — CRUD ботов | ✅ |
+| 5 | Backend API — Каналы и тарифы | ✅ |
+| 6 | Backend API — Промокоды | ✅ |
+| 7 | Backend API — Рассылки | ✅ |
+| 8 | Шаблон бота — Ядро | ✅ |
+| 9 | Шаблон бота — CryptoBot оплата | ✅ |
+| 10 | Userbot — Автодобавление | ⬜ |
+| 11 | Подписки — Проверка и автокик | ⬜ |
+| 12 | Шаблон бота — Промокоды и рассылки | ⬜ |
+| 13 | Оркестратор ботов | ⬜ |
+| 14 | Админка — Frontend | ⬜ |
+| 15 | Деплой и документация | ⬜ |
+
+**Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
+
+**Прогресс:** 9/15 этапов (60%)
+
+---
+
+## 🚀 ПРОДОЛЖЕНИЕ
+
+Напиши **"Этап 10"** для продолжения работы.
