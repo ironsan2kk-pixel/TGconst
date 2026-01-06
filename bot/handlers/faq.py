@@ -2,8 +2,11 @@
 Хендлеры FAQ (вопросы-ответы).
 """
 
+from typing import Callable
 from aiogram import Router, F
+from typing import Callable
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from typing import Callable
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +23,7 @@ async def show_faq_answer(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Показать ответ на FAQ вопрос."""
     faq_id = int(callback.data.split(':')[1])
