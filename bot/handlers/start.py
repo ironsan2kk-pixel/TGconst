@@ -22,18 +22,9 @@ async def show_main_menu(
     lang: str,
 ):
     """Показать главное меню (динамическое из БД или статическое)."""
-    from bot.handlers.menu_navigation import show_dynamic_menu, get_menu_items
+    from bot.handlers.menu_navigation import show_dynamic_menu, get_menu_items, check_user_subscription
     
-    # Проверяем есть ли пункты меню в БД
-    has_subscription = False
-    result = await session.execute(
-        select(Subscription).where(
-            Subscription.user_id == user.id,
-            Subscription.is_active == True
-        )
-    )
-    has_subscription = result.scalar_one_or_none() is not None
-    
+    has_subscription = await check_user_subscription(session, user.id)
     items = await get_menu_items(session, None, has_subscription, lang)
     
     if items:
@@ -71,7 +62,6 @@ async def cmd_start_deep_link(
     if deep_link.startswith('tariff_'):
         try:
             tariff_id = int(deep_link.replace('tariff_', ''))
-            # Импортируем здесь чтобы избежать циклического импорта
             from bot.handlers.tariffs import show_tariff_detail
             await show_tariff_detail(message, session, user, lang, _, tariff_id)
             return
@@ -96,17 +86,13 @@ async def cmd_start(
     if is_new_user:
         # Новый пользователь — показываем выбор языка
         await message.answer(
-            get_text('welcome'),  # Текст на обоих языках
+            get_text('welcome'),
             reply_markup=language_keyboard()
         )
     else:
-        # Существующий пользователь — показываем приветствие и меню
+        # Существующий пользователь — приветствие + меню
         name = user.first_name or 'друг'
-        
-        # Сначала приветствие
         await message.answer(_('welcome_back', name=name))
-        
-        # Затем меню
         await show_main_menu(message, session, user, lang)
 
 
