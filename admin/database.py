@@ -1,48 +1,71 @@
-"""Database connection for admin panel."""
+"""
+Database Connection
+Подключение к SQLite через SQLAlchemy async
+"""
 
 from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
+    async_sessionmaker,
+)
+from sqlalchemy.pool import StaticPool
 
-from bot.models import Base
 from .config import settings
 
 
-# Create async engine
+# Создание async engine
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.debug,
+    echo=settings.DEBUG,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 
-# Create session factory
-async_session = async_sessionmaker(
+# Session factory
+async_session_maker = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
 )
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency for getting database session."""
-    async with async_session() as session:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency для получения сессии БД"""
+    async with async_session_maker() as session:
         try:
             yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()
 
 
-async def init_db() -> None:
-    """Initialize database - create all tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+@asynccontextmanager
+async def get_session_context() -> AsyncGenerator[AsyncSession, None]:
+    """Context manager для получения сессии БД"""
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
-async def check_db_connection() -> bool:
-    """Check if database connection is working."""
+async def check_database() -> bool:
+    """Проверка подключения к БД"""
     try:
-        async with engine.begin() as conn:
-            await conn.execute(text("SELECT 1"))
-        return True
+        async with async_session_maker() as session:
+            await session.execute("SELECT 1")
+            return True
     except Exception:
         return False
