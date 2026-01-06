@@ -4,8 +4,11 @@
 Обрабатывает элементы меню из конструктора (MenuItem).
 """
 
+from typing import Callable
 from aiogram import Router, F, Bot
+from typing import Callable
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from typing import Callable
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -117,7 +120,7 @@ async def show_submenu(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Показать подменю (раздел)."""
     item_id = int(callback.data.split(':')[1])
@@ -156,7 +159,7 @@ async def go_back(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Вернуться на уровень выше в меню."""
     parent_id = int(callback.data.split(':')[1])
@@ -202,7 +205,7 @@ async def show_text_item(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Показать текстовое сообщение из элемента меню."""
     item_id = int(callback.data.split(':')[1])
@@ -237,7 +240,7 @@ async def show_faq_from_menu(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Показать FAQ из элемента меню."""
     item_id = int(callback.data.split(':')[1])
