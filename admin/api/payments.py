@@ -19,7 +19,7 @@ from admin.schemas.payment import (
 )
 from bot.models import Payment, User, Tariff, Subscription
 
-router = APIRouter(prefix="/payments", tags=["Payments"])
+router = APIRouter()
 
 
 async def _build_payment_response(
