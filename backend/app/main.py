@@ -8,6 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .database import init_main_db, close_all_engines, Base, get_main_engine
 from .api import api_router
+from .services.subscription_checker import (
+    start_subscription_checker, 
+    stop_subscription_checker,
+    get_subscription_checker
+)
 
 
 @asynccontextmanager
@@ -33,10 +38,19 @@ async def lifespan(app: FastAPI):
     
     print(f"✅ Main database ready: {settings.MAIN_DB_PATH}")
     
+    # Запускаем фоновую проверку подписок
+    await start_subscription_checker()
+    print("✅ Subscription checker started")
+    
     yield
     
     # Shutdown
     print("🛑 Shutting down...")
+    
+    # Останавливаем проверку подписок
+    await stop_subscription_checker()
+    print("✅ Subscription checker stopped")
+    
     await close_all_engines()
     print("✅ All connections closed")
 
