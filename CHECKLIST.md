@@ -4,30 +4,56 @@
 
 ---
 
-## КАК РАБОТАЕМ
+## ⚡ ПЛАН РАБОТЫ ПО ЭТАПАМ
 
 ```
-Ты пишешь: "Этап 1" → Я делаю ВСЁ из этапа 1
-Ты проверяешь → Пишешь "OK" или замечания
-Ты пишешь: "Этап 2" → Я делаю этап 2
-... и так до конца
+1️⃣ Пользователь пишет "Этап N" + "поехали"
+2️⃣ Claude создаёт все файлы этапа
+3️⃣ Claude ВЫГРУЖАЕТ ВСЁ В РЕПОЗИТОРИЙ
+4️⃣ Claude пишет: "проверим"
+5️⃣ Пользователь пишет: "проверка"
+6️⃣ Claude проверяет работоспособность
+7️⃣ Claude обновляет этот CHECKLIST.md (отмечает ✅)
+8️⃣ Переход к следующему этапу
 ```
 
 ---
 
+## 📊 ПРОГРЕСС
+
+| # | Этап | Статус |
+|---|------|--------|
+| 1 | Структура проекта | ✅ Готов |
+| 2 | База данных — Модели | ⬜ |
+| 3 | Backend API — Auth | ⬜ |
+| 4 | Backend API — CRUD ботов | ⬜ |
+| 5 | Backend API — Каналы и тарифы | ⬜ |
+| 6 | Backend API — Промокоды | ⬜ |
+| 7 | Backend API — Рассылки | ⬜ |
+| 8 | Шаблон бота — Ядро | ⬜ |
+| 9 | Шаблон бота — CryptoBot оплата | ⬜ |
+| 10 | Userbot — Автодобавление | ⬜ |
+| 11 | Подписки — Проверка и автокик | ⬜ |
+| 12 | Шаблон бота — Промокоды и рассылки | ⬜ |
+| 13 | Оркестратор ботов | ⬜ |
+| 14 | Админка — Frontend | ⬜ |
+| 15 | Деплой и документация | ⬜ |
+
+---
+
 ## ЭТАП 1: Структура проекта
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готов
 
 ### Задачи:
-- [ ] Создать структуру папок
-- [ ] requirements.txt (FastAPI, SQLAlchemy, aiosqlite, aiogram, pyrogram, pydantic, python-jose, passlib, httpx)
-- [ ] .env.example
-- [ ] backend/run.py (точка входа)
-- [ ] backend/app/__init__.py
-- [ ] backend/app/main.py (FastAPI + health check)
-- [ ] backend/app/config.py (Settings через pydantic)
-- [ ] backend/app/database.py (async SQLite engine)
-- [ ] Создать папку data/
+- [x] Создать структуру папок
+- [x] requirements.txt (FastAPI, SQLAlchemy, aiosqlite, aiogram, pyrogram, pydantic, python-jose, passlib, httpx)
+- [x] .env.example
+- [x] backend/run.py (точка входа)
+- [x] backend/app/__init__.py
+- [x] backend/app/main.py (FastAPI + health check)
+- [x] backend/app/config.py (Settings через pydantic)
+- [x] backend/app/database.py (async SQLite engine)
+- [x] Создать папку data/
 
 ### Проверка:
 ```bash
@@ -37,7 +63,7 @@ python backend/run.py
 
 ### Файлы:
 ```
-telegram-bot-constructor/
+TGconst/
 ├── requirements.txt
 ├── .env.example
 ├── data/
@@ -113,21 +139,6 @@ curl http://localhost:8000/api/auth/me \
 # → {"id": 1, "username": "admin"}
 ```
 
-### Файлы:
-```
-backend/app/
-├── utils/
-│   ├── __init__.py
-│   └── security.py
-├── schemas/
-│   ├── __init__.py
-│   └── auth.py
-└── api/
-    ├── __init__.py
-    ├── deps.py
-    └── auth.py
-```
-
 ---
 
 ## ЭТАП 4: Backend API — CRUD ботов
@@ -165,15 +176,6 @@ ls data/bots/abc-123/
 # → bot.db
 ```
 
-### Файлы:
-```
-backend/app/
-├── schemas/
-│   └── bot.py
-└── api/
-    └── bots.py
-```
-
 ---
 
 ## ЭТАП 5: Backend API — Каналы и тарифы
@@ -198,30 +200,6 @@ backend/app/
 - [ ] PUT /api/bots/{uuid}/tariffs/{id}
 - [ ] DELETE /api/bots/{uuid}/tariffs/{id}
 
-### Проверка:
-```bash
-# Добавить канал
-curl -X POST http://localhost:8000/api/bots/$UUID/channels \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"channel_id": -1001234567890, "title": "VIP Channel"}'
-
-# Добавить тариф
-curl -X POST http://localhost:8000/api/bots/$UUID/channels/1/tariffs \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"name": "1 месяц", "price": 10.0, "duration_days": 30}'
-```
-
-### Файлы:
-```
-backend/app/
-├── schemas/
-│   ├── channel.py
-│   └── tariff.py
-└── api/
-    ├── channels.py
-    └── tariffs.py
-```
-
 ---
 
 ## ЭТАП 6: Backend API — Промокоды
@@ -238,27 +216,6 @@ backend/app/
 - [ ] PUT /api/bots/{uuid}/promocodes/{id}
 - [ ] DELETE /api/bots/{uuid}/promocodes/{id}
 - [ ] POST /api/bots/{uuid}/promocodes/validate — проверить код
-
-### Проверка:
-```bash
-# Создать промокод
-curl -X POST http://localhost:8000/api/bots/$UUID/promocodes \
-  -d '{"code": "SAVE20", "discount_percent": 20, "max_uses": 100}'
-
-# Проверить промокод
-curl -X POST http://localhost:8000/api/bots/$UUID/promocodes/validate \
-  -d '{"code": "SAVE20"}'
-# → {"valid": true, "discount_percent": 20}
-```
-
-### Файлы:
-```
-backend/app/
-├── schemas/
-│   └── promocode.py
-└── api/
-    └── promocodes.py
-```
 
 ---
 
@@ -277,28 +234,6 @@ backend/app/
 - [ ] GET /api/bots/{uuid}/broadcasts/{id}
 - [ ] POST /api/bots/{uuid}/broadcasts/{id}/start
 - [ ] POST /api/bots/{uuid}/broadcasts/{id}/cancel
-
-### Проверка:
-```bash
-# Создать рассылку
-curl -X POST http://localhost:8000/api/bots/$UUID/broadcasts \
-  -d '{"message_text": "Привет всем!"}'
-
-# Запустить
-curl -X POST http://localhost:8000/api/bots/$UUID/broadcasts/1/start
-```
-
-### Файлы:
-```
-backend/app/
-├── schemas/
-│   └── broadcast.py
-├── api/
-│   └── broadcasts.py
-└── services/
-    ├── __init__.py
-    └── broadcast_worker.py
-```
 
 ---
 
@@ -332,26 +267,6 @@ python backend/bot_template/run.py --bot-uuid=abc-123
 # Бот запускается, /start работает
 ```
 
-### Файлы:
-```
-backend/bot_template/
-├── __init__.py
-├── run.py
-├── loader.py
-├── config.py
-├── database.py
-├── handlers/
-│   ├── __init__.py
-│   ├── start.py
-│   ├── menu.py
-│   ├── channels.py
-│   └── tariffs.py
-└── keyboards/
-    ├── __init__.py
-    ├── inline.py
-    └── reply.py
-```
-
 ---
 
 ## ЭТАП 9: Шаблон бота — CryptoBot оплата
@@ -370,29 +285,6 @@ backend/bot_template/
 - [ ] Приём webhook при оплате
 - [ ] Обновление статуса в БД
 - [ ] Уведомление юзера
-
-### Проверка:
-```bash
-# В боте: выбрать тариф → получить кнопку "Оплатить"
-# Нажать → открывается CryptoBot
-# После оплаты → webhook приходит → юзер получает сообщение
-```
-
-### Файлы:
-```
-backend/
-├── app/
-│   ├── services/
-│   │   └── cryptobot.py
-│   └── api/
-│       └── webhooks.py
-└── bot_template/
-    ├── handlers/
-    │   └── payment.py
-    └── callbacks/
-        ├── __init__.py
-        └── payment.py
-```
 
 ---
 
@@ -414,24 +306,6 @@ backend/
 - [ ] Добавление юзера
 - [ ] Обработка ошибок (FloodWait, UserPrivacyRestricted)
 
-### Проверка:
-```bash
-python userbot/run.py
-# Userbot подключается
-# Отправить задачу → юзер добавляется в канал
-```
-
-### Файлы:
-```
-userbot/
-├── run.py
-├── config.py
-├── client.py
-└── actions/
-    ├── __init__.py
-    └── invite.py
-```
-
 ---
 
 ## ЭТАП 11: Подписки — Проверка и автокик
@@ -447,21 +321,6 @@ userbot/
 - [ ] За 1 день до истечения → уведомление
 - [ ] При истечении → кик через userbot
 - [ ] Обновление is_active = 0, auto_kicked = 1
-
-### Проверка:
-```bash
-# Создать подписку с expires_at = через 1 минуту
-# Подождать → юзер кикнут, получил сообщение
-```
-
-### Файлы:
-```
-backend/app/services/
-└── subscription_checker.py
-
-userbot/actions/
-└── kick.py
-```
 
 ---
 
@@ -479,20 +338,6 @@ userbot/actions/
 - [ ] Применение скидки
 - [ ] Кнопка "Мои подписки"
 - [ ] Кнопка "Поддержка"
-
-### Проверка:
-```bash
-# В боте: ввести промокод → цена пересчитывается
-# Мои подписки → показывает список
-```
-
-### Файлы:
-```
-backend/bot_template/handlers/
-├── promocode.py
-├── subscription.py
-└── support.py
-```
 
 ---
 
@@ -513,19 +358,6 @@ backend/bot_template/handlers/
 - [ ] get_status(uuid) → running/stopped
 - [ ] startup_event → запуск всех is_active=1
 
-### Проверка:
-```bash
-# POST /api/bots/{uuid}/start → бот запускается
-# POST /api/bots/{uuid}/stop → бот останавливается
-# Рестарт backend → активные боты автозапускаются
-```
-
-### Файлы:
-```
-backend/app/services/
-└── bot_manager.py
-```
-
 ---
 
 ## ЭТАП 14: Админка — Frontend
@@ -544,13 +376,11 @@ backend/app/services/
 - [ ] frontend/src/context/AuthContext.jsx
 - [ ] frontend/src/pages/Login.jsx
 - [ ] frontend/src/pages/Dashboard.jsx
-- [ ] frontend/src/pages/Bots/BotList.jsx
-- [ ] frontend/src/pages/Bots/BotCreate.jsx
-- [ ] frontend/src/pages/Bots/BotEdit.jsx
-- [ ] frontend/src/pages/Channels/
-- [ ] frontend/src/pages/Tariffs/
-- [ ] frontend/src/pages/Promocodes/
-- [ ] frontend/src/pages/Broadcasts/
+- [ ] frontend/src/pages/Bots/*
+- [ ] frontend/src/pages/Channels/*
+- [ ] frontend/src/pages/Tariffs/*
+- [ ] frontend/src/pages/Promocodes/*
+- [ ] frontend/src/pages/Broadcasts/*
 - [ ] frontend/src/components/Layout.jsx
 - [ ] frontend/src/components/Sidebar.jsx
 
@@ -562,29 +392,6 @@ backend/app/services/
 - [ ] Tariffs — тарифы
 - [ ] Promocodes — промокоды
 - [ ] Broadcasts — рассылки
-
-### Проверка:
-```bash
-cd frontend && npm run dev
-# http://localhost:3000 → логин → дашборд
-# CRUD ботов работает
-```
-
-### Файлы:
-```
-frontend/
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-├── index.html
-└── src/
-    ├── main.jsx
-    ├── App.jsx
-    ├── api/
-    ├── context/
-    ├── components/
-    └── pages/
-```
 
 ---
 
@@ -600,71 +407,6 @@ frontend/
 - [ ] README.md (полная инструкция)
 - [ ] Оптимизация для продакшена
 
-### README.md:
-- [ ] Требования к серверу
-- [ ] Установка Python, Node.js
-- [ ] Клонирование репо
-- [ ] Настройка .env
-- [ ] Создание админа
-- [ ] Настройка Pyrogram session
-- [ ] Запуск через supervisor
-- [ ] Настройка nginx + SSL
-- [ ] Создание первого бота
-- [ ] Troubleshooting
-
-### Проверка:
-```bash
-# На VPS:
-./scripts/install.sh
-supervisorctl start all
-# https://your-domain.com → работает
-```
-
-### Файлы:
-```
-scripts/
-├── install.sh
-└── supervisor/
-    ├── backend.conf
-    └── userbot.conf
-
-nginx.conf
-README.md
-```
-
 ---
 
-## 📊 ПРОГРЕСС
-
-| # | Этап | Статус |
-|---|------|--------|
-| 1 | Структура проекта | ⬜ |
-| 2 | База данных — Модели | ⬜ |
-| 3 | Backend API — Auth | ⬜ |
-| 4 | Backend API — CRUD ботов | ⬜ |
-| 5 | Backend API — Каналы и тарифы | ⬜ |
-| 6 | Backend API — Промокоды | ⬜ |
-| 7 | Backend API — Рассылки | ⬜ |
-| 8 | Шаблон бота — Ядро | ⬜ |
-| 9 | Шаблон бота — CryptoBot оплата | ⬜ |
-| 10 | Userbot — Автодобавление | ⬜ |
-| 11 | Подписки — Проверка и автокик | ⬜ |
-| 12 | Шаблон бота — Промокоды и рассылки | ⬜ |
-| 13 | Оркестратор ботов | ⬜ |
-| 14 | Админка — Frontend | ⬜ |
-| 15 | Деплой и документация | ⬜ |
-
-**Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
-
----
-
-## 🚀 СТАРТ
-
-1. Скинь ссылку на GitHub репозиторий
-2. Напиши **"Этап 1"**
-3. Я делаю всё из списка
-4. Ты проверяешь
-5. Пишешь **"Этап 2"**
-6. Повторяем до конца
-
-**Готов. Жду команду!**
+**Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готов
