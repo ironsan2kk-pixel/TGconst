@@ -1,7 +1,7 @@
 """Menu API endpoints for menu constructor."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -294,3 +294,195 @@ async def duplicate_menu_item(
     await session.refresh(new_item)
     
     return _build_menu_item_response(new_item, [])
+
+
+
+# === Templates ===
+
+# Predefined templates
+MENU_TEMPLATES = {
+    "crypto_signals": {
+        "name": "Крипто-сигналы / Crypto Signals",
+        "description_ru": "Шаблон для продажи доступа к крипто-сигналам",
+        "description_en": "Template for selling access to crypto signals",
+        "items": [
+            {
+                "type": "system",
+                "system_action": "tariffs",
+                "text_ru": "Получить доступ",
+                "text_en": "Get access",
+                "icon": "🚀",
+                "sort_order": 1,
+                "visibility": "all"
+            },
+            {
+                "type": "system",
+                "system_action": "subscriptions",
+                "text_ru": "Мои подписки",
+                "text_en": "My subscriptions",
+                "icon": "💳",
+                "sort_order": 2,
+                "visibility": "all"
+            },
+            {
+                "type": "section",
+                "text_ru": "Настройки",
+                "text_en": "Settings",
+                "icon": "⚙️",
+                "sort_order": 3,
+                "visibility": "subscribed",
+                "children": []  # Admin fills with channel settings
+            },
+            {
+                "type": "text",
+                "text_ru": "Контакты",
+                "text_en": "Contacts",
+                "icon": "📞",
+                "value": "📞 Контакты / Contacts\n\nAdmin: @admin\nSupport: @support\nChannel: @channel",
+                "sort_order": 4,
+                "visibility": "all"
+            },
+            {
+                "type": "system",
+                "system_action": "promocode",
+                "text_ru": "Промокод",
+                "text_en": "Promocode",
+                "icon": "🎁",
+                "sort_order": 5,
+                "visibility": "all"
+            },
+        ]
+    },
+    "channel_access": {
+        "name": "Продажа каналов / Channel Access",
+        "description_ru": "Базовый шаблон для продажи доступа к каналам",
+        "description_en": "Basic template for selling channel access",
+        "items": [
+            {
+                "type": "system",
+                "system_action": "tariffs",
+                "text_ru": "Тарифы",
+                "text_en": "Plans",
+                "icon": "📺",
+                "sort_order": 1,
+                "visibility": "not_subscribed"
+            },
+            {
+                "type": "system",
+                "system_action": "subscriptions",
+                "text_ru": "Мои подписки",
+                "text_en": "My subscriptions",
+                "icon": "💳",
+                "sort_order": 2,
+                "visibility": "all"
+            },
+            {
+                "type": "system",
+                "system_action": "promocode",
+                "text_ru": "Промокод",
+                "text_en": "Promocode",
+                "icon": "🎁",
+                "sort_order": 3,
+                "visibility": "all"
+            },
+            {
+                "type": "system",
+                "system_action": "language",
+                "text_ru": "Язык",
+                "text_en": "Language",
+                "icon": "🌐",
+                "sort_order": 4,
+                "visibility": "all"
+            },
+            {
+                "type": "system",
+                "system_action": "support",
+                "text_ru": "Поддержка",
+                "text_en": "Support",
+                "icon": "💬",
+                "sort_order": 5,
+                "visibility": "all"
+            },
+        ]
+    },
+}
+
+
+@router.get("/templates")
+async def get_menu_templates():
+    """Get available menu templates."""
+    templates = []
+    for key, data in MENU_TEMPLATES.items():
+        templates.append({
+            "id": key,
+            "name": data["name"],
+            "description_ru": data["description_ru"],
+            "description_en": data["description_en"],
+            "items_count": len(data["items"])
+        })
+    return {"items": templates}
+
+
+@router.post("/templates/{template_id}/apply")
+async def apply_menu_template(
+    template_id: str,
+    clear_existing: bool = True,
+    session: AsyncSession = Depends(get_session)
+):
+    """Apply a menu template."""
+    if template_id not in MENU_TEMPLATES:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    template = MENU_TEMPLATES[template_id]
+    
+    # Optionally clear existing menu items
+    if clear_existing:
+        await session.execute(delete(MenuItem))
+        await session.commit()
+    
+    # Create menu items from template
+    created_items = []
+    for item_data in template["items"]:
+        children = item_data.pop("children", [])
+        
+        item = MenuItem(
+            parent_id=None,
+            type=item_data.get("type", "text"),
+            system_action=item_data.get("system_action"),
+            text_ru=item_data.get("text_ru", ""),
+            text_en=item_data.get("text_en"),
+            icon=item_data.get("icon"),
+            value=item_data.get("value"),
+            visibility=item_data.get("visibility", "all"),
+            visibility_language=item_data.get("visibility_language", "all"),
+            sort_order=item_data.get("sort_order", 0),
+            is_active=True
+        )
+        session.add(item)
+        await session.flush()
+        created_items.append(item)
+        
+        # Create children if any
+        for child_data in children:
+            child = MenuItem(
+                parent_id=item.id,
+                type=child_data.get("type", "text"),
+                system_action=child_data.get("system_action"),
+                text_ru=child_data.get("text_ru", ""),
+                text_en=child_data.get("text_en"),
+                icon=child_data.get("icon"),
+                value=child_data.get("value"),
+                visibility=child_data.get("visibility", "all"),
+                visibility_language=child_data.get("visibility_language", "all"),
+                sort_order=child_data.get("sort_order", 0),
+                is_active=True
+            )
+            session.add(child)
+    
+    await session.commit()
+    
+    return {
+        "success": True,
+        "message": f"Template '{template['name']}' applied successfully",
+        "items_created": len(created_items)
+    }
