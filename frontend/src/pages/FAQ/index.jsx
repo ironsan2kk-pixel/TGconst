@@ -1,27 +1,15 @@
-import { useState, useEffect } from 'react';
-import { 
-  HelpCircle, 
-  Plus, 
-  Edit, 
-  Trash2,
-  Search,
-  ChevronDown,
-  ChevronRight,
-  MessageCircle
-} from 'lucide-react';
-import { Modal, ConfirmDialog } from '../../components';
-// import { faqAPI, menuAPI } from '../../api/client';
+import { useState, useEffect } from 'react'
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
+import { DataTable, Modal, ConfirmDialog } from '../../components'
+import { faqAPI } from '../../api/client'
 
 export default function FAQ() {
-  const [faqItems, setFaqItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState({});
-
+  const [faqItems, setFaqItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [expandedIds, setExpandedIds] = useState(new Set())
   const [formData, setFormData] = useState({
     question_ru: '',
     question_en: '',
@@ -30,135 +18,70 @@ export default function FAQ() {
     category_id: '',
     sort_order: 0,
     is_active: true
-  });
+  })
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    loadFAQ()
+  }, [])
 
-  const fetchData = async () => {
-    setLoading(true);
+  const loadFAQ = async () => {
+    setLoading(true)
     try {
-      // const [faqRes, menuRes] = await Promise.all([
-      //   faqAPI.getAll(),
-      //   menuAPI.getAll()
-      // ]);
-      // setFaqItems(faqRes.data);
-      // Filter menu items to get only sections for categories
-      // setCategories(menuRes.data.filter(item => item.type === 'section'));
-      
-      // Mock data
-      setCategories([
-        { id: 4, text_ru: 'FAQ', text_en: 'FAQ', icon: '❓' },
-        { id: 7, text_ru: 'Обучение', text_en: 'Learning', icon: '📚' }
-      ]);
-      
-      setFaqItems([
-        {
-          id: 1,
-          question_ru: 'Как оплатить подписку?',
-          question_en: 'How to pay for subscription?',
-          answer_ru: 'Вы можете оплатить подписку криптовалютой USDT через CryptoBot. Выберите тариф, нажмите "Оплатить" и следуйте инструкциям.',
-          answer_en: 'You can pay for subscription with USDT cryptocurrency via CryptoBot. Select a tariff, click "Pay" and follow the instructions.',
-          category_id: 4,
-          sort_order: 1,
-          is_active: true,
-          created_at: '2025-01-01T10:00:00Z'
-        },
-        {
-          id: 2,
-          question_ru: 'Как отменить подписку?',
-          question_en: 'How to cancel subscription?',
-          answer_ru: 'Подписка автоматически заканчивается по истечении оплаченного периода. Если нужна помощь, обратитесь в поддержку.',
-          answer_en: 'Subscription automatically ends after the paid period expires. If you need help, contact support.',
-          category_id: 4,
-          sort_order: 2,
-          is_active: true,
-          created_at: '2025-01-01T10:00:00Z'
-        },
-        {
-          id: 3,
-          question_ru: 'Что такое промокод?',
-          question_en: 'What is a promo code?',
-          answer_ru: 'Промокод даёт скидку на покупку подписки. Введите его в разделе "Промокод" перед оплатой.',
-          answer_en: 'A promo code gives you a discount on subscription purchase. Enter it in the "Promo Code" section before payment.',
-          category_id: 4,
-          sort_order: 3,
-          is_active: true,
-          created_at: '2025-01-01T10:00:00Z'
-        },
-        {
-          id: 4,
-          question_ru: 'Как получить доступ к каналам?',
-          question_en: 'How to get channel access?',
-          answer_ru: 'После успешной оплаты вы автоматически получите приглашения во все каналы, входящие в ваш тариф.',
-          answer_en: 'After successful payment, you will automatically receive invitations to all channels included in your tariff.',
-          category_id: 4,
-          sort_order: 4,
-          is_active: true,
-          created_at: '2025-01-02T10:00:00Z'
-        },
-        {
-          id: 5,
-          question_ru: 'Где найти обучающие материалы?',
-          question_en: 'Where to find learning materials?',
-          answer_ru: 'Все обучающие материалы доступны в разделе "Обучение" главного меню. Там вы найдёте гайды и видео-уроки.',
-          answer_en: 'All learning materials are available in the "Learning" section of the main menu. You will find guides and video tutorials there.',
-          category_id: 7,
-          sort_order: 1,
-          is_active: true,
-          created_at: '2025-01-03T10:00:00Z'
-        }
-      ]);
-
-      // Expand all categories by default
-      setExpandedCategories({ 4: true, 7: true });
+      const response = await faqAPI.getAll()
+      setFaqItems(response.data)
     } catch (error) {
-      console.error('Error fetching FAQ data:', error);
+      console.error('Error loading FAQ:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSubmit = async () => {
     try {
-      if (selectedItem) {
-        // await faqAPI.update(selectedItem.id, formData);
-        console.log('Updating FAQ:', selectedItem.id, formData);
-        setFaqItems(faqItems.map(item => 
-          item.id === selectedItem.id ? { ...item, ...formData } : item
-        ));
-      } else {
-        // const response = await faqAPI.create(formData);
-        console.log('Creating FAQ:', formData);
-        setFaqItems([...faqItems, { 
-          id: Date.now(), 
-          ...formData,
-          created_at: new Date().toISOString()
-        }]);
+      const data = {
+        ...formData,
+        category_id: formData.category_id ? parseInt(formData.category_id) : null,
+        sort_order: parseInt(formData.sort_order) || 0
       }
-      handleCloseModal();
+      if (selectedItem) {
+        await faqAPI.update(selectedItem.id, data)
+      } else {
+        await faqAPI.create(data)
+      }
+      setIsModalOpen(false)
+      resetForm()
+      loadFAQ()
     } catch (error) {
-      console.error('Error saving FAQ:', error);
+      console.error('Error saving FAQ:', error)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!selectedItem) return;
     try {
-      // await faqAPI.delete(selectedItem.id);
-      console.log('Deleting FAQ:', selectedItem.id);
-      setFaqItems(faqItems.filter(item => item.id !== selectedItem.id));
-      setShowConfirm(false);
-      setSelectedItem(null);
+      await faqAPI.delete(selectedItem.id)
+      setIsDeleteOpen(false)
+      loadFAQ()
     } catch (error) {
-      console.error('Error deleting FAQ:', error);
+      console.error('Error deleting FAQ:', error)
     }
-  };
+  }
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedItem(null);
+  const openEditModal = (item) => {
+    setSelectedItem(item)
+    setFormData({
+      question_ru: item.question_ru,
+      question_en: item.question_en || '',
+      answer_ru: item.answer_ru,
+      answer_en: item.answer_en || '',
+      category_id: item.category_id?.toString() || '',
+      sort_order: item.sort_order || 0,
+      is_active: item.is_active
+    })
+    setIsModalOpen(true)
+  }
+
+  const resetForm = () => {
+    setSelectedItem(null)
     setFormData({
       question_ru: '',
       question_en: '',
@@ -167,274 +90,110 @@ export default function FAQ() {
       category_id: '',
       sort_order: 0,
       is_active: true
-    });
-  };
+    })
+  }
 
-  const openEditModal = (item) => {
-    setSelectedItem(item);
-    setFormData({
-      question_ru: item.question_ru,
-      question_en: item.question_en,
-      answer_ru: item.answer_ru,
-      answer_en: item.answer_en,
-      category_id: item.category_id || '',
-      sort_order: item.sort_order,
-      is_active: item.is_active
-    });
-    setShowModal(true);
-  };
+  const toggleExpand = (id) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
-  const toggleCategory = (categoryId) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
-  };
-
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(c => c.id === categoryId);
-    return category ? category.text_ru : 'Без категории';
-  };
-
-  const filteredItems = faqItems.filter(item => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      item.question_ru.toLowerCase().includes(query) ||
-      item.question_en.toLowerCase().includes(query) ||
-      item.answer_ru.toLowerCase().includes(query) ||
-      item.answer_en.toLowerCase().includes(query)
-    );
-  });
-
-  // Group items by category
-  const groupedItems = {};
-  filteredItems.forEach(item => {
-    const catId = item.category_id || 'uncategorized';
-    if (!groupedItems[catId]) {
-      groupedItems[catId] = [];
+  const columns = [
+    { key: 'id', label: 'ID', sortable: true },
+    { 
+      key: 'question_ru', 
+      label: 'Вопрос',
+      render: (value, row) => (
+        <div>
+          <button 
+            onClick={() => toggleExpand(row.id)}
+            className="flex items-center gap-2 text-left hover:text-primary-600"
+          >
+            {expandedIds.has(row.id) ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+            <span className="font-medium">{value}</span>
+          </button>
+          {expandedIds.has(row.id) && (
+            <div className="mt-2 ml-6 p-3 bg-gray-50 dark:bg-gray-700 rounded text-sm">
+              {row.answer_ru}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      key: 'is_active', 
+      label: 'Статус',
+      render: (value) => (
+        <span className={value ? 'badge-green' : 'badge-red'}>
+          {value ? 'Активен' : 'Скрыт'}
+        </span>
+      )
     }
-    groupedItems[catId].push(item);
-  });
+  ]
 
-  // Sort items within each category
-  Object.keys(groupedItems).forEach(catId => {
-    groupedItems[catId].sort((a, b) => a.sort_order - b.sort_order);
-  });
+  const actions = [
+    {
+      icon: Edit,
+      label: 'Редактировать',
+      onClick: openEditModal
+    },
+    {
+      icon: Trash2,
+      label: 'Удалить',
+      onClick: (row) => {
+        setSelectedItem(row)
+        setIsDeleteOpen(true)
+      },
+      className: 'text-red-600 hover:text-red-700'
+    }
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            FAQ
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Вопросы и ответы для пользователей
+          <h1 className="text-2xl font-bold">FAQ</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Вопросы и ответы: {faqItems.length}
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            resetForm()
+            setIsModalOpen(true)
+          }}
           className="btn-primary flex items-center gap-2"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           Добавить вопрос
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-              <HelpCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Всего вопросов</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {faqItems.length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-              <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Активных</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {faqItems.filter(f => f.is_active).length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Категорий</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {categories.length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <DataTable
+        data={faqItems}
+        columns={columns}
+        actions={actions}
+        loading={loading}
+        searchKeys={['question_ru', 'question_en', 'answer_ru']}
+      />
 
-      {/* Search */}
-      <div className="card p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Поиск по вопросам и ответам..."
-            className="input pl-10"
-          />
-        </div>
-      </div>
-
-      {/* FAQ List by Category */}
-      {loading ? (
-        <div className="card p-8 text-center text-gray-500">
-          Загрузка...
-        </div>
-      ) : filteredItems.length === 0 ? (
-        <div className="card p-8 text-center text-gray-500">
-          {searchQuery ? 'Ничего не найдено' : 'Нет вопросов. Добавьте первый!'}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {categories.map(category => {
-            const items = groupedItems[category.id] || [];
-            if (items.length === 0 && searchQuery) return null;
-            
-            return (
-              <div key={category.id} className="card overflow-hidden">
-                <button
-                  onClick={() => toggleCategory(category.id)}
-                  className="w-full p-4 flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{category.icon}</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {category.text_ru}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      ({items.length})
-                    </span>
-                  </div>
-                  {expandedCategories[category.id] ? (
-                    <ChevronDown className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-500" />
-                  )}
-                </button>
-                
-                {expandedCategories[category.id] && items.length > 0 && (
-                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {items.map(item => (
-                      <div 
-                        key={item.id}
-                        className={`p-4 ${!item.is_active ? 'opacity-50' : ''}`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 dark:text-white">
-                              {item.question_ru}
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {item.question_en}
-                            </p>
-                            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
-                              {item.answer_ru}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {!item.is_active && (
-                              <span className="badge-yellow text-xs">Скрыт</span>
-                            )}
-                            <button
-                              onClick={() => openEditModal(item)}
-                              className="p-1 text-gray-500 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedItem(item);
-                                setShowConfirm(true);
-                              }}
-                              className="p-1 text-gray-500 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Uncategorized */}
-          {groupedItems['uncategorized'] && groupedItems['uncategorized'].length > 0 && (
-            <div className="card overflow-hidden">
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50">
-                <span className="font-medium text-gray-900 dark:text-white">
-                  Без категории ({groupedItems['uncategorized'].length})
-                </span>
-              </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {groupedItems['uncategorized'].map(item => (
-                  <div key={item.id} className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          {item.question_ru}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
-                          {item.answer_ru}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => openEditModal(item)}
-                          className="p-1 text-gray-500 hover:text-primary-600"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setShowConfirm(true);
-                          }}
-                          className="p-1 text-gray-500 hover:text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Add/Edit Modal */}
       <Modal
-        isOpen={showModal}
-        onClose={handleCloseModal}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          resetForm()
+        }}
         title={selectedItem ? 'Редактировать вопрос' : 'Добавить вопрос'}
         size="lg"
       >
@@ -447,19 +206,16 @@ export default function FAQ() {
                 value={formData.question_ru}
                 onChange={(e) => setFormData({ ...formData, question_ru: e.target.value })}
                 className="input"
-                placeholder="Как оплатить?"
                 required
               />
             </div>
             <div>
-              <label className="label">Вопрос (EN) *</label>
+              <label className="label">Вопрос (EN)</label>
               <input
                 type="text"
                 value={formData.question_en}
                 onChange={(e) => setFormData({ ...formData, question_en: e.target.value })}
                 className="input"
-                placeholder="How to pay?"
-                required
               />
             </div>
           </div>
@@ -470,91 +226,54 @@ export default function FAQ() {
               value={formData.answer_ru}
               onChange={(e) => setFormData({ ...formData, answer_ru: e.target.value })}
               className="input min-h-[100px]"
-              placeholder="Подробный ответ на русском..."
               required
             />
           </div>
 
           <div>
-            <label className="label">Ответ (EN) *</label>
+            <label className="label">Ответ (EN)</label>
             <textarea
               value={formData.answer_en}
               onChange={(e) => setFormData({ ...formData, answer_en: e.target.value })}
               className="input min-h-[100px]"
-              placeholder="Detailed answer in English..."
-              required
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Категория</label>
-              <select
-                value={formData.category_id}
-                onChange={(e) => setFormData({ ...formData, category_id: e.target.value ? parseInt(e.target.value) : '' })}
-                className="input"
-              >
-                <option value="">Без категории</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.text_ru}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Порядок сортировки</label>
-              <input
-                type="number"
-                value={formData.sort_order}
-                onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                className="input"
-                min="0"
-              />
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
-              id="is_active"
+              id="faq_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="w-4 h-4 rounded border-gray-300"
+              className="w-4 h-4 rounded"
             />
-            <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">
-              Активен (показывать в боте)
-            </label>
+            <label htmlFor="faq_active" className="text-sm">Активен</label>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button onClick={handleCloseModal} className="btn-secondary">
-              Отмена
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="btn-primary"
-              disabled={!formData.question_ru || !formData.question_en || !formData.answer_ru || !formData.answer_en}
-            >
-              {selectedItem ? 'Сохранить' : 'Добавить'}
-            </button>
-          </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => { setIsModalOpen(false); resetForm() }} className="btn-secondary">
+            Отмена
+          </button>
+          <button 
+            onClick={handleSubmit} 
+            className="btn-primary"
+            disabled={!formData.question_ru || !formData.answer_ru}
+          >
+            {selectedItem ? 'Сохранить' : 'Добавить'}
+          </button>
         </div>
       </Modal>
 
-      {/* Confirm Delete */}
       <ConfirmDialog
-        isOpen={showConfirm}
-        onClose={() => {
-          setShowConfirm(false);
-          setSelectedItem(null);
-        }}
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleDelete}
-        title="Удалить вопрос?"
-        message="Вопрос будет удалён из FAQ."
+        title="Удалить вопрос"
+        message={`Удалить "${selectedItem?.question_ru}"?`}
         confirmText="Удалить"
-        type="danger"
+        danger
       />
     </div>
-  );
+  )
 }
