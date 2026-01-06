@@ -12,9 +12,9 @@ from admin.config import settings
 router = APIRouter(prefix="/backup", tags=["Backup"])
 
 # Paths
-DATA_DIR = Path(settings.database_path).parent
+DATA_DIR = Path(settings.DATABASE_PATH).parent
 BACKUP_DIR = DATA_DIR / "backups"
-DB_FILE = Path(settings.database_path)
+DB_FILE = Path(settings.DATABASE_PATH)
 
 
 def ensure_backup_dir():
