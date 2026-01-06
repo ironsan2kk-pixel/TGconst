@@ -6,6 +6,7 @@ Database Connection
 from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     create_async_engine,
@@ -65,7 +66,8 @@ async def check_database() -> bool:
     """Проверка подключения к БД"""
     try:
         async with async_session_maker() as session:
-            await session.execute("SELECT 1")
+            await session.execute(text("SELECT 1"))
             return True
-    except Exception:
+    except Exception as e:
+        print(f"Database error: {e}")
         return False
