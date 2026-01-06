@@ -13,10 +13,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ..database import Base
+from ..database import MainBase
 
 
-class Admin(Base):
+class Admin(MainBase):
     """Администраторы системы"""
     __tablename__ = "admins"
     
@@ -33,7 +33,7 @@ class Admin(Base):
         return f"<Admin(id={self.id}, username={self.username})>"
 
 
-class Bot(Base):
+class Bot(MainBase):
     """Созданные боты"""
     __tablename__ = "bots"
     
@@ -66,7 +66,7 @@ class Bot(Base):
         return f"<Bot(id={self.id}, uuid={self.uuid}, name={self.name})>"
 
 
-class UserbotConfig(Base):
+class UserbotConfig(MainBase):
     """Конфигурация Pyrogram userbot для добавления/кика пользователей"""
     __tablename__ = "userbot_config"
     
