@@ -9,6 +9,7 @@ Callback-обработчики процесса оплаты через CryptoB
 
 import json
 from datetime import datetime
+
 from typing import Callable, Optional
 
 from aiogram import Router, F, Bot
@@ -382,7 +383,7 @@ async def process_successful_payment(
     callback: CallbackQuery | None = None,
     message_chat_id: int | None = None,
     bot: Bot | None = None,
-    _: Optional[Callable] = None,
+    _: Callable | None = None,
 ) -> None:
     """
     Обработать успешный платёж.
