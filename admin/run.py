@@ -1,64 +1,100 @@
-"""Admin panel FastAPI application."""
+"""
+Admin Panel - FastAPI Application
+Точка входа для запуска админ-панели
+"""
 
 import sys
 from pathlib import Path
-
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
-from .database import init_db
-from .api import router
+# Добавляем корень проекта в path
+ROOT_DIR = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
+from admin.config import settings
+from admin.database import check_database
+from admin.api import api_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan handler."""
+    """Lifecycle events"""
     # Startup
-    print("🚀 Starting admin panel...")
-    await init_db()
-    print("✅ Database initialized")
+    print("=" * 50)
+    print("🚀 Admin Panel Starting...")
+    print(f"📁 Database: {settings.DATABASE_PATH}")
+    print(f"🔧 Debug: {settings.DEBUG}")
+    print("=" * 50)
+    
+    # Проверка БД
+    db_ok = await check_database()
+    if db_ok:
+        print("✅ Database connected")
+    else:
+        print("❌ Database connection failed!")
     
     yield
     
     # Shutdown
-    print("👋 Shutting down...")
+    print("👋 Admin Panel Shutting down...")
 
 
-# Create FastAPI app
+# Создание приложения
 app = FastAPI(
-    title="Telegram Channel Bot Admin",
-    description="Admin panel API for Telegram channel selling bot",
-    version="3.0.0",
+    title="Telegram Channel Bot - Admin Panel",
+    description="API для управления Telegram ботом продажи доступа к каналам",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# Add CORS middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API router
-app.include_router(router)
+# Подключение API роутера
+app.include_router(api_router)
+
+
+# Health check
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Проверка состояния сервера"""
+    db_status = await check_database()
+    return {
+        "status": "ok" if db_status else "degraded",
+        "database": "connected" if db_status else "disconnected",
+        "version": "1.0.0",
+    }
+
+
+@app.get("/", tags=["System"])
+async def root():
+    """Корневой endpoint"""
+    return {
+        "message": "Telegram Channel Bot - Admin API",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 def main():
-    """Run the application."""
+    """Запуск сервера"""
     uvicorn.run(
         "admin.run:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug,
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
     )
 
 
