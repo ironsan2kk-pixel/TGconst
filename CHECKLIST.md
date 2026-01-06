@@ -484,8 +484,9 @@ npm run dev
 - [x] supervisor конфиги (backend.conf, userbot.conf)
 - [x] nginx.conf
 - [x] README.md
+- [x] Windows .bat файлы
 
-### Созданные файлы:
+### Созданные файлы (Linux):
 ```
 scripts/
 ├── install.sh                  # Автоматическая установка
@@ -497,9 +498,21 @@ nginx.conf                      # Конфиг nginx с SSL
 README.md                       # Полная документация
 ```
 
-### Проверка:
+### Созданные файлы (Windows):
+```
+install.bat             # Установка (venv, зависимости, .env, админ)
+start_backend.bat       # Запуск FastAPI backend
+start_userbot.bat       # Запуск Pyrogram userbot
+start_frontend.bat      # Запуск React dev server
+start_all.bat           # Запуск всех компонентов (3 окна)
+stop_all.bat            # Остановка всех процессов
+generate_session.bat    # Генерация Pyrogram session
+build_frontend.bat      # Сборка frontend для production
+create_admin.bat        # Создание админа
+```
+
+### Проверка (Linux/VPS):
 ```bash
-# На VPS:
 chmod +x scripts/install.sh
 ./scripts/install.sh
 
@@ -513,8 +526,20 @@ sudo cp nginx.conf /etc/nginx/sites-available/bot-constructor
 sudo ln -s /etc/nginx/sites-available/bot-constructor /etc/nginx/sites-enabled/
 sudo certbot --nginx -d your-domain.com
 sudo nginx -t && sudo systemctl reload nginx
+```
 
-# https://your-domain.com → работает!
+### Проверка (Windows):
+```cmd
+:: Установка
+install.bat
+
+:: Запуск всего
+start_all.bat
+
+:: Или по отдельности:
+start_backend.bat
+start_userbot.bat
+start_frontend.bat
 ```
 
 ---
