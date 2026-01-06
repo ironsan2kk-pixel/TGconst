@@ -15,6 +15,39 @@ from bot.locales import get_text
 router = Router()
 
 
+async def show_main_menu(
+    message: Message,
+    session: AsyncSession,
+    user: User,
+    lang: str,
+):
+    """Показать главное меню (динамическое из БД или статическое)."""
+    from bot.handlers.menu_navigation import show_dynamic_menu, get_menu_items
+    
+    # Проверяем есть ли пункты меню в БД
+    has_subscription = False
+    result = await session.execute(
+        select(Subscription).where(
+            Subscription.user_id == user.id,
+            Subscription.is_active == True
+        )
+    )
+    has_subscription = result.scalar_one_or_none() is not None
+    
+    items = await get_menu_items(session, None, has_subscription, lang)
+    
+    if items:
+        # Есть пункты в БД - используем динамическое меню
+        await show_dynamic_menu(message, session, user, lang, parent_id=None, edit=False)
+    else:
+        # БД пустая - используем статическое меню
+        _ = lambda key, **kw: get_text(key, lang, **kw)
+        await message.answer(
+            _('menu.title'),
+            reply_markup=main_menu_keyboard(lang, has_subscription)
+        )
+
+
 @router.message(CommandStart(deep_link=True))
 async def cmd_start_deep_link(
     message: Message,
@@ -70,19 +103,11 @@ async def cmd_start(
         # Существующий пользователь — показываем приветствие и меню
         name = user.first_name or 'друг'
         
-        # Проверяем наличие активной подписки
-        result = await session.execute(
-            select(Subscription).where(
-                Subscription.user_id == user.id,
-                Subscription.is_active == True
-            )
-        )
-        has_subscription = result.scalar_one_or_none() is not None
+        # Сначала приветствие
+        await message.answer(_('welcome_back', name=name))
         
-        await message.answer(
-            _('welcome_back', name=name),
-            reply_markup=main_menu_keyboard(lang, has_subscription)
-        )
+        # Затем меню
+        await show_main_menu(message, session, user, lang)
 
 
 @router.message(F.text == '/menu')
@@ -94,16 +119,4 @@ async def cmd_menu(
     _: callable,
 ):
     """Команда /menu — показать главное меню."""
-    # Проверяем наличие активной подписки
-    result = await session.execute(
-        select(Subscription).where(
-            Subscription.user_id == user.id,
-            Subscription.is_active == True
-        )
-    )
-    has_subscription = result.scalar_one_or_none() is not None
-    
-    await message.answer(
-        _('menu.title'),
-        reply_markup=main_menu_keyboard(lang, has_subscription)
-    )
+    await show_main_menu(message, session, user, lang)
