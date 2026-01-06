@@ -8,11 +8,69 @@ from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from bot.models import User, Subscription, Tariff
-from bot.keyboards import language_keyboard, main_menu_keyboard
+from bot.models import User, Subscription, Tariff, MenuItem
+from bot.keyboards import language_keyboard, main_menu_keyboard, dynamic_menu_keyboard
 from bot.locales import get_text
 
 router = Router()
+
+
+async def get_menu_items_from_db(
+    session: AsyncSession,
+    parent_id: int | None = None,
+    has_subscription: bool = False,
+    language: str = 'ru'
+) -> list[MenuItem]:
+    """Получить пункты меню из БД."""
+    query = select(MenuItem).where(
+        MenuItem.parent_id == parent_id,
+        MenuItem.is_active == True
+    ).order_by(MenuItem.sort_order)
+    
+    result = await session.execute(query)
+    items = result.scalars().all()
+    
+    filtered = []
+    for item in items:
+        if item.visibility_language and item.visibility_language != 'all':
+            if item.visibility_language != language:
+                continue
+        if item.visibility == 'subscribed' and not has_subscription:
+            continue
+        if item.visibility == 'not_subscribed' and has_subscription:
+            continue
+        filtered.append(item)
+    
+    return filtered
+
+
+async def show_main_menu(
+    message: Message,
+    session: AsyncSession,
+    user: User,
+    lang: str,
+):
+    """Показать главное меню."""
+    _ = lambda key, **kw: get_text(key, lang, **kw)
+    
+    # Проверяем подписку
+    result = await session.execute(
+        select(Subscription).where(
+            Subscription.user_id == user.id,
+            Subscription.is_active == True
+        )
+    )
+    has_subscription = result.scalar_one_or_none() is not None
+    
+    # Пробуем загрузить из БД
+    items = await get_menu_items_from_db(session, None, has_subscription, lang)
+    
+    if items:
+        keyboard = dynamic_menu_keyboard(items, lang)
+    else:
+        keyboard = main_menu_keyboard(lang, has_subscription)
+    
+    await message.answer(_('menu.title'), reply_markup=keyboard)
 
 
 @router.message(CommandStart(deep_link=True))
@@ -25,27 +83,21 @@ async def cmd_start_deep_link(
     _: callable,
     is_new_user: bool,
 ):
-    """
-    Обработка /start с deep link.
-    Формат: /start tariff_5 → открыть тариф #5
-    """
+    """Обработка /start с deep link."""
     deep_link = command.args
     
     if not deep_link:
         return await cmd_start(message, session, user, lang, _, is_new_user)
     
-    # Парсим deep link
     if deep_link.startswith('tariff_'):
         try:
             tariff_id = int(deep_link.replace('tariff_', ''))
-            # Импортируем здесь чтобы избежать циклического импорта
             from bot.handlers.tariffs import show_tariff_detail
             await show_tariff_detail(message, session, user, lang, _, tariff_id)
             return
         except (ValueError, TypeError):
             pass
     
-    # Если deep link не распознан, показываем обычный старт
     await cmd_start(message, session, user, lang, _, is_new_user)
 
 
@@ -61,28 +113,14 @@ async def cmd_start(
     """Обработка команды /start."""
     
     if is_new_user:
-        # Новый пользователь — показываем выбор языка
         await message.answer(
-            get_text('welcome'),  # Текст на обоих языках
+            get_text('welcome'),
             reply_markup=language_keyboard()
         )
     else:
-        # Существующий пользователь — показываем приветствие и меню
         name = user.first_name or 'друг'
-        
-        # Проверяем наличие активной подписки
-        result = await session.execute(
-            select(Subscription).where(
-                Subscription.user_id == user.id,
-                Subscription.is_active == True
-            )
-        )
-        has_subscription = result.scalar_one_or_none() is not None
-        
-        await message.answer(
-            _('welcome_back', name=name),
-            reply_markup=main_menu_keyboard(lang, has_subscription)
-        )
+        await message.answer(_('welcome_back', name=name))
+        await show_main_menu(message, session, user, lang)
 
 
 @router.message(F.text == '/menu')
@@ -93,18 +131,5 @@ async def cmd_menu(
     lang: str,
     _: callable,
 ):
-    """Команда /menu — показать главное меню."""
-    # Проверяем наличие активной подписки
-    result = await session.execute(
-        select(Subscription).where(
-            Subscription.user_id == user.id,
-            Subscription.is_active == True
-        )
-    )
-    has_subscription = result.scalar_one_or_none() is not None
-    
-    await message.answer(
-        _('menu.title'),
-        reply_markup=main_menu_keyboard(lang, has_subscription)
-    )
-
+    """Команда /menu."""
+    await show_main_menu(message, session, user, lang)
