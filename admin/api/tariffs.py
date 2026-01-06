@@ -16,7 +16,7 @@ from admin.schemas.tariff import (
 )
 from bot.models import Tariff, TariffChannel, Channel, Subscription
 
-router = APIRouter(prefix="/tariffs", tags=["Tariffs"])
+router = APIRouter()
 
 
 async def _build_tariff_response(session: AsyncSession, tariff: Tariff) -> TariffResponse:
