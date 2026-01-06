@@ -1,22 +1,24 @@
 """
 Обработка статического меню (fallback если БД пустая).
+Обработчик menu:main перенесён в menu_navigation.py
 """
 
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
-from bot.models import User, Subscription
-from bot.keyboards import main_menu_keyboard, language_keyboard, support_keyboard
+from bot.models import User, Subscription, Tariff
+from bot.keyboards import language_keyboard, support_keyboard, back_to_menu_keyboard, tariffs_keyboard, subscriptions_keyboard
 from bot.config import config
 from bot.locales import get_text
 
 router = Router()
 
 
-# Примечание: обработчик menu:main теперь в menu_navigation.py
-# Здесь оставляем только вспомогательные обработчики
+# ВАЖНО: обработчик menu:main находится в menu_navigation.py!
+# Здесь только вспомогательные обработчики для статических пунктов меню
 
 
 @router.callback_query(F.data == "menu:language")
@@ -57,10 +59,6 @@ async def menu_subscriptions(
     _: callable,
 ):
     """Показать подписки пользователя."""
-    from bot.keyboards import back_to_menu_keyboard, subscriptions_keyboard
-    from bot.models import Tariff
-    from sqlalchemy.orm import selectinload
-    
     result = await session.execute(
         select(Subscription).where(
             Subscription.user_id == user.id,
@@ -90,9 +88,6 @@ async def menu_tariffs(
     _: callable,
 ):
     """Показать тарифы."""
-    from bot.models import Tariff
-    from bot.keyboards import tariffs_keyboard
-    
     result = await session.execute(
         select(Tariff).where(Tariff.is_active == True).order_by(Tariff.sort_order)
     )
@@ -112,8 +107,6 @@ async def menu_promocode(
     _: callable,
 ):
     """Показать ввод промокода."""
-    from bot.keyboards import back_to_menu_keyboard
-    
     await callback.message.edit_text(
         _('promocode.enter'),
         reply_markup=back_to_menu_keyboard(lang)
