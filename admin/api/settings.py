@@ -17,7 +17,7 @@ from admin.schemas.settings import (
 )
 from bot.models import Settings
 
-router = APIRouter(prefix="/settings", tags=["Settings"])
+router = APIRouter()
 
 
 # Default settings keys
