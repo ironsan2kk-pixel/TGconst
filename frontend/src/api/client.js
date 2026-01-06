@@ -102,7 +102,7 @@ export const menuAPI = {
   getAll: () => api.get('/menu'),
   getById: (id) => api.get(`/menu/${id}`),
   create: (data) => api.post('/menu', data),
-  update: (id, data) => api.put(`/menu/${id}`, data),
+  update: (id, data) => api.patch(`/menu/${id}`, data),
   delete: (id) => api.delete(`/menu/${id}`),
   reorder: (items) => api.post('/menu/reorder', { items }),
 }
@@ -131,3 +131,4 @@ export const backupAPI = {
 }
 
 export default api
+
