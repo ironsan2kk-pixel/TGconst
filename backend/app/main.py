@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import init_main_db, close_all_engines, Base, get_main_engine
+from .api import api_router
 
 
 @asynccontextmanager
@@ -76,6 +77,9 @@ def create_app() -> FastAPI:
             "version": "1.0.0",
             "status": "running"
         }
+    
+    # Подключаем API роутеры
+    app.include_router(api_router)
     
     return app
 
