@@ -9,6 +9,7 @@ Callback-обработчики процесса оплаты через CryptoB
 
 import json
 from datetime import datetime
+from typing import Callable, Optional
 
 from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -84,7 +85,7 @@ async def start_payment(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
     bot: Bot,
     state: FSMContext,
 ):
@@ -200,7 +201,7 @@ async def start_trial(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
     bot: Bot,
 ):
     """Активировать пробный период."""
@@ -272,7 +273,7 @@ async def check_payment(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
     bot: Bot,
 ):
     """Проверить статус оплаты."""
@@ -344,7 +345,7 @@ async def cancel_payment(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Отменить платёж."""
     payment_id = int(callback.data.split(':')[1])
@@ -381,7 +382,7 @@ async def process_successful_payment(
     callback: CallbackQuery | None = None,
     message_chat_id: int | None = None,
     bot: Bot | None = None,
-    _: callable | None = None,
+    _: Optional[Callable] = None,
 ) -> None:
     """
     Обработать успешный платёж.
