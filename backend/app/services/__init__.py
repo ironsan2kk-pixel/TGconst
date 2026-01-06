@@ -1,6 +1,7 @@
 """
 Сервисы приложения
 """
-from .broadcast_worker import BroadcastWorker
 
-__all__ = ["BroadcastWorker"]
+from .cryptobot import CryptoBotAPI, CryptoBotError
+
+__all__ = ["CryptoBotAPI", "CryptoBotError"]
