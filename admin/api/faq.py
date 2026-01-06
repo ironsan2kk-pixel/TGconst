@@ -16,7 +16,7 @@ from admin.schemas.faq import (
 )
 from bot.models import FAQItem, MenuItem
 
-router = APIRouter(prefix="/faq", tags=["FAQ"])
+router = APIRouter()
 
 
 async def _build_faq_response(
