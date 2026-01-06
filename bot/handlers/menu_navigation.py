@@ -4,11 +4,10 @@
 Обрабатывает элементы меню из конструктора (MenuItem).
 """
 
-from typing import Callable
+from typing import Callable, Optional
+
 from aiogram import Router, F, Bot
-from typing import Callable
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from typing import Callable
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
