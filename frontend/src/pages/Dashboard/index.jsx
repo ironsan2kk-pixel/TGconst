@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Users, CreditCard, DollarSign, TrendingUp } from 'lucide-react'
-import { StatsCard, Chart } from '../components'
-import { dashboardAPI } from '../api/client'
+import { StatsCard, Chart } from '../../components'
+import { dashboardAPI } from '../../api/client'
 
 // Mock data for demo
 const mockStats = {
