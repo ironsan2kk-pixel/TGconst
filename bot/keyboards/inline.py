@@ -275,3 +275,46 @@ def subscription_detail_keyboard(
     
     builder.adjust(1)
     return builder.as_markup()
+
+
+
+def dynamic_menu_keyboard(
+    items: list,  # List of MenuItem objects
+    lang: str,
+    parent_id: int | None = None
+) -> InlineKeyboardMarkup:
+    """Динамическая клавиатура меню из БД."""
+    builder = InlineKeyboardBuilder()
+    
+    for item in items:
+        text = item.text_ru if lang == 'ru' else (item.text_en or item.text_ru)
+        if item.icon:
+            text = f"{item.icon} {text}"
+        
+        if item.type == 'link' and item.value:
+            # Внешняя ссылка
+            builder.button(text=text, url=item.value)
+        elif item.type == 'system':
+            # Системное действие - используем старые callback
+            action_map = {
+                'tariffs': 'menu:tariffs',
+                'subscriptions': 'menu:subscriptions',
+                'language': 'menu:language',
+                'support': 'menu:support',
+                'promocode': 'menu:promocode',
+            }
+            callback = action_map.get(item.system_action, f'menu_item:{item.id}')
+            builder.button(text=text, callback_data=callback)
+        else:
+            # Раздел, текст, FAQ
+            builder.button(text=text, callback_data=f"menu_item:{item.id}")
+    
+    # Кнопка назад если в подменю
+    if parent_id is not None:
+        builder.button(
+            text=f"◀️ {get_text('menu.back', lang)}",
+            callback_data=f"menu_back:{parent_id}"
+        )
+    
+    builder.adjust(1)
+    return builder.as_markup()
