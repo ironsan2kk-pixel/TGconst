@@ -2,8 +2,13 @@
 
 from fastapi import APIRouter
 
+from admin.api import webhooks
+
 # Main router
 router = APIRouter()
+
+# Include webhook routes
+router.include_router(webhooks.router)
 
 
 @router.get("/health")
