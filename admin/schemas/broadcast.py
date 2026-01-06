@@ -85,8 +85,21 @@ class BroadcastListResponse(BaseModel):
     """Список рассылок."""
     items: list[BroadcastResponse]
     total: int
-    limit: int
-    offset: int
+    page: int
+    per_page: int
+    pages: int
+
+
+class BroadcastStats(BaseModel):
+    """Статистика рассылок."""
+    total: int
+    draft: int
+    running: int
+    paused: int
+    completed: int
+    cancelled: int
+    total_sent: int
+    total_failed: int
 
 
 class BroadcastCountResponse(BaseModel):
