@@ -1,154 +1,181 @@
 import { useState, useEffect } from 'react'
-import { Clock, XCircle, Plus } from 'lucide-react'
+import { Clock, XCircle } from 'lucide-react'
 import { DataTable, Modal, ConfirmDialog } from '../../components'
-
-// Mock data
-const mockSubscriptions = [
-  { id: 1, user_name: 'Иван П.', tariff_name: 'Премиум', is_trial: false, starts_at: '2024-01-15', expires_at: '2024-02-15', is_active: true },
-  { id: 2, user_name: 'Anna K.', tariff_name: 'VIP', is_trial: false, starts_at: '2024-01-20', expires_at: null, is_active: true },
-  { id: 3, user_name: 'Сергей М.', tariff_name: 'Базовый', is_trial: true, starts_at: '2024-02-01', expires_at: '2024-02-04', is_active: false },
-]
+import { subscriptionsAPI } from '../../api/client'
 
 export default function Subscriptions() {
-  const [subscriptions, setSubscriptions] = useState(mockSubscriptions)
-  const [loading, setLoading] = useState(false)
-  const [extendModal, setExtendModal] = useState({ open: false, subscription: null })
-  const [cancelDialog, setCancelDialog] = useState({ open: false, subscription: null })
-  const [extendDays, setExtendDays] = useState(30)
+  const [subscriptions, setSubscriptions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedSub, setSelectedSub] = useState(null)
+  const [isExtendOpen, setIsExtendOpen] = useState(false)
+  const [isCancelOpen, setIsCancelOpen] = useState(false)
+  const [extendDays, setExtendDays] = useState('30')
+
+  useEffect(() => {
+    loadSubscriptions()
+  }, [])
+
+  const loadSubscriptions = async () => {
+    setLoading(true)
+    try {
+      const response = await subscriptionsAPI.getAll()
+      setSubscriptions(response.data)
+    } catch (error) {
+      console.error('Error loading subscriptions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleExtend = async () => {
     try {
-      setSubscriptions(subscriptions.map(s => {
-        if (s.id === extendModal.subscription.id) {
-          const currentExpires = s.expires_at ? new Date(s.expires_at) : new Date()
-          currentExpires.setDate(currentExpires.getDate() + extendDays)
-          return { ...s, expires_at: currentExpires.toISOString().split('T')[0], is_active: true }
-        }
-        return s
-      }))
-      setExtendModal({ open: false, subscription: null })
-      setExtendDays(30)
+      await subscriptionsAPI.extend(selectedSub.id, parseInt(extendDays))
+      setIsExtendOpen(false)
+      setExtendDays('30')
+      loadSubscriptions()
     } catch (error) {
-      console.error('Failed to extend:', error)
+      console.error('Error extending subscription:', error)
     }
   }
 
   const handleCancel = async () => {
     try {
-      setSubscriptions(subscriptions.map(s => 
-        s.id === cancelDialog.subscription.id ? { ...s, is_active: false } : s
-      ))
-      setCancelDialog({ open: false, subscription: null })
+      await subscriptionsAPI.cancel(selectedSub.id)
+      setIsCancelOpen(false)
+      loadSubscriptions()
     } catch (error) {
-      console.error('Failed to cancel:', error)
+      console.error('Error cancelling subscription:', error)
     }
   }
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Навсегда'
+    return new Date(dateStr).toLocaleDateString('ru-RU')
+  }
+
+  const getStatusBadge = (sub) => {
+    if (!sub.is_active) return <span className="badge-red">Отменена</span>
+    if (sub.expires_at && new Date(sub.expires_at) < new Date()) {
+      return <span className="badge-red">Истекла</span>
+    }
+    return <span className="badge-green">Активна</span>
+  }
+
   const columns = [
-    { key: 'id', label: 'ID' },
-    { key: 'user_name', label: 'Пользователь' },
-    { key: 'tariff_name', label: 'Тариф' },
+    { key: 'id', label: 'ID', sortable: true },
+    { 
+      key: 'user', 
+      label: 'Пользователь',
+      render: (_, row) => row.user?.username ? `@${row.user.username}` : row.user?.first_name || `ID: ${row.user_id}`
+    },
+    { 
+      key: 'tariff', 
+      label: 'Тариф',
+      render: (_, row) => row.tariff?.name_ru || `ID: ${row.tariff_id}`
+    },
     { 
       key: 'is_trial', 
       label: 'Тип',
-      render: (val) => val ? (
-        <span className="badge badge-warning">🎁 Пробный</span>
+      render: (value) => value ? (
+        <span className="badge-yellow">Пробный</span>
       ) : (
-        <span className="badge badge-info">💳 Платный</span>
+        <span className="badge-blue">Оплачен</span>
       )
     },
-    { key: 'starts_at', label: 'Начало' },
+    { 
+      key: 'starts_at', 
+      label: 'Начало',
+      render: formatDate
+    },
     { 
       key: 'expires_at', 
       label: 'Окончание',
-      render: (val) => val || '♾️ Навсегда'
+      render: formatDate
     },
     { 
-      key: 'is_active', 
+      key: 'status', 
       label: 'Статус',
-      render: (val) => (
-        <span className={`badge ${val ? 'badge-success' : 'badge-danger'}`}>
-          {val ? 'Активна' : 'Истекла'}
-        </span>
-      )
+      render: (_, row) => getStatusBadge(row)
     }
   ]
+
+  const actions = [
+    {
+      icon: Clock,
+      label: 'Продлить',
+      onClick: (row) => {
+        setSelectedSub(row)
+        setIsExtendOpen(true)
+      },
+      show: (row) => row.is_active
+    },
+    {
+      icon: XCircle,
+      label: 'Отменить',
+      onClick: (row) => {
+        setSelectedSub(row)
+        setIsCancelOpen(true)
+      },
+      className: 'text-red-600 hover:text-red-700',
+      show: (row) => row.is_active
+    }
+  ]
+
+  const activeCount = subscriptions.filter(s => s.is_active).length
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Подписки</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Активных: {subscriptions.filter(s => s.is_active).length}
+          <h1 className="text-2xl font-bold">Подписки</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Активных: {activeCount} из {subscriptions.length}
           </p>
         </div>
       </div>
 
       <DataTable
-        columns={columns}
         data={subscriptions}
-        searchable={true}
-        searchKeys={['user_name', 'tariff_name']}
-        actions={(row) => (
-          <>
-            <button
-              onClick={() => setExtendModal({ open: true, subscription: row })}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-500"
-              title="Продлить"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            {row.is_active && (
-              <button
-                onClick={() => setCancelDialog({ open: true, subscription: row })}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500"
-                title="Отменить"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            )}
-          </>
-        )}
+        columns={columns}
+        actions={actions}
+        loading={loading}
       />
 
       {/* Extend Modal */}
       <Modal
-        isOpen={extendModal.open}
-        onClose={() => setExtendModal({ open: false, subscription: null })}
+        isOpen={isExtendOpen}
+        onClose={() => setIsExtendOpen(false)}
         title="Продлить подписку"
       >
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
-            Продлить подписку для {extendModal.subscription?.user_name}
-          </p>
-          <div>
-            <label className="label">Количество дней</label>
-            <input
-              type="number"
-              min="1"
-              value={extendDays}
-              onChange={(e) => setExtendDays(parseInt(e.target.value) || 0)}
-              className="input"
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button onClick={() => setExtendModal({ open: false, subscription: null })} className="btn btn-secondary">
-              Отмена
-            </button>
-            <button onClick={handleExtend} className="btn btn-primary">
-              Продлить
-            </button>
-          </div>
+        <div>
+          <label className="label">Количество дней</label>
+          <input
+            type="number"
+            value={extendDays}
+            onChange={(e) => setExtendDays(e.target.value)}
+            className="input"
+            min="1"
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setIsExtendOpen(false)} className="btn-secondary">
+            Отмена
+          </button>
+          <button onClick={handleExtend} className="btn-primary">
+            Продлить
+          </button>
         </div>
       </Modal>
 
+      {/* Cancel Confirm */}
       <ConfirmDialog
-        isOpen={cancelDialog.open}
-        onClose={() => setCancelDialog({ open: false, subscription: null })}
+        isOpen={isCancelOpen}
+        onClose={() => setIsCancelOpen(false)}
         onConfirm={handleCancel}
         title="Отменить подписку"
-        message="Вы уверены? Пользователь потеряет доступ к каналам."
+        message="Вы уверены что хотите отменить эту подписку?"
+        confirmText="Отменить"
+        danger
       />
     </div>
   )
