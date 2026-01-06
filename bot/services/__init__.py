@@ -13,6 +13,10 @@ from bot.services.subscription import (
     check_user_has_trial,
     extend_subscription,
 )
+from bot.services.subscription_checker import (
+    SubscriptionChecker,
+    run_single_check,
+)
 
 
 __all__ = [
@@ -31,4 +35,7 @@ __all__ = [
     'get_tariff_channels',
     'check_user_has_trial',
     'extend_subscription',
+    # Subscription Checker
+    'SubscriptionChecker',
+    'run_single_check',
 ]
