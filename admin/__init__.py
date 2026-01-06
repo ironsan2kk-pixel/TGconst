@@ -1,3 +1,6 @@
-"""Admin panel backend package."""
+"""
+Admin Panel Backend
+FastAPI приложение для управления Telegram ботом
+"""
 
-__version__ = "3.0.0"
+__version__ = "1.0.0"
