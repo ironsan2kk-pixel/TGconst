@@ -1,3 +1,9 @@
-"""Telegram bot package."""
+"""
+Telegram бот для продажи доступа к каналам.
+"""
 
-__version__ = "3.0.0"
+from bot.config import config
+from bot.loader import bot, dp
+
+
+__all__ = ['bot', 'dp', 'config']
