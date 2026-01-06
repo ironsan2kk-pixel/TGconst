@@ -1,4 +1,12 @@
 """
-Callback обработчики для inline кнопок.
-Основная логика в handlers/, здесь будут специфичные callbacks.
+Callback handlers для бота
 """
+
+from aiogram import Router
+
+from . import payment
+
+router = Router()
+router.include_router(payment.router)
+
+__all__ = ["router"]
