@@ -10,7 +10,6 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if needed
     return config
   },
   (error) => Promise.reject(error)
@@ -54,12 +53,12 @@ export const tariffsAPI = {
 export const usersAPI = {
   getAll: (params) => api.get('/users', { params }),
   getById: (id) => api.get(`/users/${id}`),
-  search: (query) => api.get(`/users/search?q=${query}`),
+  getByTelegram: (telegramId) => api.get(`/users/by-telegram/${telegramId}`),
+  update: (id, data) => api.patch(`/users/${id}`, data),
   ban: (id, reason) => api.post(`/users/${id}/ban`, { reason }),
   unban: (id) => api.post(`/users/${id}/unban`),
-  grantAccess: (id, data) => api.post(`/users/${id}/grant`, data),
-  revokeAccess: (id, subscriptionId) => api.post(`/users/${id}/revoke`, { subscription_id: subscriptionId }),
-  export: (format = 'csv') => api.get(`/users/export?format=${format}`, { responseType: 'blob' }),
+  grantAccess: (id, data) => api.post(`/users/${id}/grant-access`, data, { params: { admin_telegram_id: 0 } }),
+  revokeAccess: (id, tariffId) => api.post(`/users/${id}/revoke-access`, null, { params: { tariff_id: tariffId } }),
 }
 
 // Subscriptions
@@ -75,9 +74,8 @@ export const subscriptionsAPI = {
 export const paymentsAPI = {
   getAll: (params) => api.get('/payments', { params }),
   getById: (id) => api.get(`/payments/${id}`),
-  confirmManual: (id) => api.post(`/payments/${id}/confirm`),
+  confirm: (id) => api.post(`/payments/${id}/confirm`),
   createManual: (data) => api.post('/payments/manual', data),
-  export: (format = 'csv') => api.get(`/payments/export?format=${format}`, { responseType: 'blob' }),
 }
 
 // Promocodes
@@ -87,7 +85,6 @@ export const promocodesAPI = {
   create: (data) => api.post('/promocodes', data),
   update: (id, data) => api.put(`/promocodes/${id}`, data),
   delete: (id) => api.delete(`/promocodes/${id}`),
-  getUsage: (id) => api.get(`/promocodes/${id}/usage`),
 }
 
 // Broadcasts
@@ -97,15 +94,12 @@ export const broadcastsAPI = {
   create: (data) => api.post('/broadcasts', data),
   start: (id) => api.post(`/broadcasts/${id}/start`),
   pause: (id) => api.post(`/broadcasts/${id}/pause`),
-  resume: (id) => api.post(`/broadcasts/${id}/resume`),
   cancel: (id) => api.post(`/broadcasts/${id}/cancel`),
-  delete: (id) => api.delete(`/broadcasts/${id}`),
 }
 
 // Menu Builder
 export const menuAPI = {
   getAll: () => api.get('/menu'),
-  getTree: () => api.get('/menu/tree'),
   getById: (id) => api.get(`/menu/${id}`),
   create: (data) => api.post('/menu', data),
   update: (id, data) => api.put(`/menu/${id}`, data),
@@ -125,17 +119,14 @@ export const faqAPI = {
 // Settings
 export const settingsAPI = {
   getAll: () => api.get('/settings'),
-  get: (key) => api.get(`/settings/${key}`),
-  update: (key, value) => api.put(`/settings/${key}`, { value }),
-  updateBatch: (settings) => api.put('/settings', settings),
+  update: (data) => api.put('/settings', data),
 }
 
 // Backup
 export const backupAPI = {
-  getList: () => api.get('/backup'),
-  create: () => api.post('/backup/create'),
-  download: (filename) => api.get(`/backup/download/${filename}`, { responseType: 'blob' }),
-  restore: (filename) => api.post(`/backup/restore/${filename}`),
+  list: () => api.get('/backup'),
+  create: () => api.post('/backup'),
+  download: (filename) => api.get(`/backup/${filename}`, { responseType: 'blob' }),
   delete: (filename) => api.delete(`/backup/${filename}`),
 }
 
