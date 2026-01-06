@@ -75,6 +75,13 @@
 ### README.md:
 - [x] Обновить с новым описанием проекта
 
+### Проверка:
+```cmd
+install.bat
+start_admin.bat
+:: http://localhost:8000/health → {"status": "ok"}
+```
+
 ---
 
 ## ЧАТ 2: Telegram бот — Ядро
@@ -124,6 +131,12 @@
 ### Windows .bat:
 - [x] `start_bot.bat`
 
+### Проверка:
+```cmd
+start_bot.bat
+:: /start в Telegram → выбор языка → меню
+```
+
 ---
 
 ## ЧАТ 3: CryptoBot оплата
@@ -142,6 +155,12 @@
 
 ### Сервис подписок:
 - [x] `bot/services/subscription.py`
+
+### Проверка:
+```cmd
+:: Добавить CRYPTOBOT_TOKEN в .env
+:: Выбрать тариф → Оплатить → webhook → подписка создана
+```
 
 ---
 
@@ -166,6 +185,13 @@
 ### Windows .bat:
 - [x] `start_userbot.bat`
 - [x] `generate_session.bat`
+
+### Проверка:
+```cmd
+generate_session.bat
+start_userbot.bat
+:: После оплаты → юзер в каналах
+```
 
 ---
 
@@ -203,6 +229,13 @@
 ### Пробный период:
 - [x] Логика trial в оплате
 
+### Проверка:
+```cmd
+:: /admin → меню работает
+:: Промокод применяется
+:: Мои подписки показывает список
+```
+
 ---
 
 ## ЧАТ 6: Рассылки
@@ -218,6 +251,11 @@
 
 ### Админ в боте:
 - [x] Быстрая рассылка через /admin
+
+### Проверка:
+```cmd
+:: /admin → Рассылка → текст → отправлено X из Y
+```
 
 ---
 
@@ -244,46 +282,59 @@
 - [x] `scripts/backup_db.py`
 - [x] `backup_db.bat`
 
+### Проверка:
+```cmd
+start_admin.bat
+:: http://localhost:8000/docs — Swagger работает
+```
+
 ---
 
 ## ЧАТ 8: Админка — Frontend
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Базовая структура:
-- [ ] `frontend/package.json`, `vite.config.js`, `tailwind.config.js`
-- [ ] `frontend/src/main.jsx`, `App.jsx`, `index.css`
+- [x] `frontend/package.json`, `vite.config.js`, `tailwind.config.js`
+- [x] `frontend/src/main.jsx`, `App.jsx`, `index.css`
 
 ### API клиент:
-- [ ] `frontend/src/api/client.js` и все модули
+- [x] `frontend/src/api/client.js` и все модули
 
 ### Тёмная тема:
-- [ ] `frontend/src/context/ThemeContext.jsx`
-- [ ] CSS переменные, localStorage
-- [ ] ThemeToggle компонент
+- [x] `frontend/src/context/ThemeContext.jsx`
+- [x] CSS переменные, localStorage
+- [x] ThemeToggle компонент
 
 ### Компоненты:
-- [ ] Layout, Sidebar, Header, ThemeToggle
-- [ ] StatsCard, Chart (Recharts), DataTable
-- [ ] Modal, ConfirmDialog, ExportButton
-- [ ] **DragDropTree** — для конструктора меню
-- [ ] **MenuItemForm** — форма элемента меню
-- [ ] **MenuPreview** — превью меню как в боте
+- [x] Layout, Sidebar, Header, ThemeToggle
+- [x] StatsCard, Chart (Recharts), DataTable
+- [x] Modal, ConfirmDialog, ExportButton
+- [x] **DragDropTree** — для конструктора меню
+- [x] **MenuItemForm** — форма элемента меню
+- [x] **MenuPreview** — превью меню как в боте
 
 ### Страницы:
-- [ ] Dashboard с графиками
-- [ ] Channels, Tariffs (CRUD)
-- [ ] Users (+ выдача/отзыв/бан)
-- [ ] Subscriptions, Payments (+ ручное подтверждение)
-- [ ] Promocodes, Broadcasts
-- [ ] **MenuBuilder** — конструктор меню (drag-n-drop)
-- [ ] **FAQ** — вопросы-ответы
-- [ ] Settings, Backups
+- [x] Dashboard с графиками
+- [x] Channels, Tariffs (CRUD)
+- [x] Users (+ выдача/отзыв/бан)
+- [x] Subscriptions, Payments (+ ручное подтверждение)
+- [x] Promocodes, Broadcasts
+- [x] **MenuBuilder** — конструктор меню (drag-n-drop)
+- [x] **FAQ** — вопросы-ответы
+- [x] Settings, Backups
 
 ### Windows .bat:
-- [ ] `start_frontend.bat`
-- [ ] `start_all.bat`
-- [ ] `stop_all.bat`
-- [ ] `build_frontend.bat`
+- [x] `start_frontend.bat`
+- [x] `start_all.bat`
+- [x] `stop_all.bat`
+- [x] `build_frontend.bat`
+
+### Проверка:
+```cmd
+cd frontend && npm install && npm run dev
+:: http://localhost:3000 — Dashboard с графиками
+:: Тёмная тема переключается
+```
 
 ---
 
@@ -295,25 +346,97 @@
 | 2 | Бот — Ядро | ✅ | /start, меню, тарифы, i18n |
 | 3 | CryptoBot | ✅ | Оплата, webhook |
 | 4 | Userbot + Подписки | ✅ | Инвайт, кик, проверка |
-| 5 | Фичи бота | ✅ | Промокоды, админ, trial, меню, FAQ |
+| 5 | Фичи бота | ✅ | Промокоды, админ, trial, **меню, FAQ** |
 | 6 | Рассылки | ✅ | Broadcast система |
-| 7 | Backend API | ✅ | Все endpoints, menu, faq |
-| 8 | Frontend | ⬜ | React + тёмная тема, MenuBuilder |
+| 7 | Backend API | ✅ | Все endpoints, **menu, faq** |
+| 8 | Frontend | ✅ | React + тёмная тема, **MenuBuilder** |
 
 **Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
-**Прогресс:** 7/8 чатов (87.5%)
+**Прогресс:** 8/8 чатов (100%) 🎉
 
 ---
 
-## 🚀 СТАРТ
+## 🚀 ЗАПУСК ПРОЕКТА
 
-1. Напиши **"Чат 8"**
-2. Claude делает всё из списка
-3. Claude выгружает в GitHub
-4. Ты проверяешь
-5. Проект готов!
+### Быстрый старт (Windows):
+```cmd
+:: 1. Клонировать репозиторий
+git clone https://github.com/ironsan2kk-pixel/TGconst.git
+cd TGconst
+
+:: 2. Установка
+install.bat
+
+:: 3. Настроить .env
+:: Открыть .env и заполнить BOT_TOKEN, ADMIN_IDS
+
+:: 4. Запустить всё
+start_all.bat
+```
+
+### Доступы:
+- **Admin Panel:** http://localhost:3000
+- **API Docs:** http://localhost:8000/docs
+- **Health Check:** http://localhost:8000/health
 
 ---
 
-**Готов. Жду команду "Чат 8"!**
+## 📁 СТРУКТУРА ФАЙЛОВ
+
+```
+telegram-channel-bot/
+├── .env.example          # Шаблон переменных окружения
+├── .gitignore            # Игнорируемые файлы
+├── requirements.txt      # Python зависимости
+├── README.md             # Документация
+├── MASTER_PLAN.md        # Мастер-план проекта
+├── CHECKLIST.md          # Этот чеклист
+├── CLAUDE_INSTRUCTION.md # Инструкции для Claude
+│
+├── install.bat           # Установка проекта
+├── start_bot.bat         # Запуск Telegram бота
+├── start_admin.bat       # Запуск Backend API
+├── start_userbot.bat     # Запуск Pyrogram userbot
+├── start_frontend.bat    # Запуск React dev server
+├── start_all.bat         # Запуск всех компонентов
+├── stop_all.bat          # Остановка всех процессов
+├── backup_db.bat         # Бэкап базы данных
+├── generate_session.bat  # Генерация Pyrogram session
+├── build_frontend.bat    # Сборка frontend для production
+│
+├── data/                 # База данных и бэкапы
+│   ├── bot.db
+│   └── backups/
+│
+├── bot/                  # Telegram бот (Aiogram 3)
+│   ├── models/           # SQLAlchemy модели
+│   ├── handlers/         # Обработчики команд
+│   ├── keyboards/        # Клавиатуры
+│   ├── callbacks/        # Callback handlers
+│   ├── middlewares/      # Middleware
+│   ├── services/         # Бизнес-логика
+│   └── locales/          # Локализация
+│
+├── userbot/              # Pyrogram userbot
+│   └── actions/          # Invite/Kick
+│
+├── admin/                # Backend API (FastAPI)
+│   ├── api/              # Endpoints
+│   └── schemas/          # Pydantic schemas
+│
+├── frontend/             # React админка
+│   └── src/
+│       ├── api/          # API клиент
+│       ├── components/   # UI компоненты
+│       ├── context/      # React контексты
+│       └── pages/        # Страницы
+│
+└── scripts/              # Утилиты
+    ├── setup_db.py
+    └── backup_db.py
+```
+
+---
+
+**🎉 ПРОЕКТ ЗАВЕРШЁН!**
