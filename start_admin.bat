@@ -33,3 +33,10 @@ echo Для остановки нажмите Ctrl+C
 echo.
 
 python -m admin.run
+
+:: Если вышли с ошибкой - показать
+if errorlevel 1 (
+    echo.
+    echo [ОШИБКА] Сервер упал с ошибкой!
+    pause
+)
