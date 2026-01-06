@@ -15,6 +15,7 @@ from bot.handlers import (
     menu_navigation,
     faq,
     admin,
+    reply_handlers,
 )
 
 
@@ -24,6 +25,7 @@ def setup_handlers() -> Router:
     
     # Подключаем роутеры
     router.include_router(start.router)
+    router.include_router(reply_handlers.router)  # Reply Keyboard handlers
     router.include_router(menu.router)
     router.include_router(language.router)
     router.include_router(tariffs.router)
@@ -35,4 +37,3 @@ def setup_handlers() -> Router:
     router.include_router(admin.router)
     
     return router
-
