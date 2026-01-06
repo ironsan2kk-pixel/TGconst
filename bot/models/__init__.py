@@ -9,7 +9,7 @@ from .subscription import Subscription
 from .payment import Payment
 from .promocode import Promocode, PromocodeUse
 from .broadcast import Broadcast
-from .menu_item import MenuItem
+from .menu_item import MenuItem, MenuTemplate
 from .faq_item import FAQItem
 from .admin_log import AdminLog
 
@@ -27,6 +27,7 @@ __all__ = [
     "PromocodeUse",
     "Broadcast",
     "MenuItem",
+    "MenuTemplate",
     "FAQItem",
     "AdminLog",
 ]
