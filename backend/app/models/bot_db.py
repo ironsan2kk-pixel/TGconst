@@ -17,10 +17,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..database import Base
+from ..database import BotBase
 
 
-class Channel(Base):
+class Channel(BotBase):
     """Каналы для продажи доступа"""
     __tablename__ = "channels"
     
@@ -51,7 +51,7 @@ class Channel(Base):
         return f"<Channel(id={self.id}, title={self.title})>"
 
 
-class Tariff(Base):
+class Tariff(BotBase):
     """Тарифы для каналов"""
     __tablename__ = "tariffs"
     
@@ -88,7 +88,7 @@ class Tariff(Base):
         return f"<Tariff(id={self.id}, name={self.name}, price={self.price})>"
 
 
-class User(Base):
+class User(BotBase):
     """Пользователи бота"""
     __tablename__ = "users"
     
@@ -136,7 +136,7 @@ class User(Base):
         return f"<User(id={self.id}, telegram_id={self.telegram_id})>"
 
 
-class Subscription(Base):
+class Subscription(BotBase):
     """Подписки пользователей на каналы"""
     __tablename__ = "subscriptions"
     
@@ -183,7 +183,7 @@ class Subscription(Base):
         return f"<Subscription(id={self.id}, user_id={self.user_id}, expires_at={self.expires_at})>"
 
 
-class Payment(Base):
+class Payment(BotBase):
     """Платежи пользователей"""
     __tablename__ = "payments"
     
@@ -226,7 +226,7 @@ class Payment(Base):
         return f"<Payment(id={self.id}, invoice_id={self.invoice_id}, status={self.status})>"
 
 
-class Promocode(Base):
+class Promocode(BotBase):
     """Промокоды со скидками"""
     __tablename__ = "promocodes"
     
@@ -279,7 +279,7 @@ class Promocode(Base):
         return f"<Promocode(id={self.id}, code={self.code})>"
 
 
-class Broadcast(Base):
+class Broadcast(BotBase):
     """Рассылки пользователям"""
     __tablename__ = "broadcasts"
     
