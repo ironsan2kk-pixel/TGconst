@@ -28,7 +28,7 @@ export default function FAQ() {
     setLoading(true)
     try {
       const response = await faqAPI.getAll()
-      setFaqItems(response.data)
+      const data = response.data.items || response.data; setFaqItems(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading FAQ:', error)
     } finally {
