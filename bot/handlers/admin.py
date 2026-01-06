@@ -993,19 +993,80 @@ async def admin_manual_payment_execute(
     await callback.answer()
 
 
+
 @router.callback_query(F.data == "admin:broadcast")
 async def admin_broadcast_start(callback: CallbackQuery, state: FSMContext):
-    """Начать быструю рассылку."""
+    """Начать быструю рассылку - выбор фильтра."""
     if not is_admin(callback.from_user.id):
         await callback.answer("⛔ Нет доступа", show_alert=True)
         return
     
-    await state.set_state(AdminStates.broadcast_text)
+    buttons = [
+        [InlineKeyboardButton(text="👥 Всем пользователям", callback_data="admin:broadcast_filter:all")],
+        [InlineKeyboardButton(text="✅ С активной подпиской", callback_data="admin:broadcast_filter:active")],
+        [InlineKeyboardButton(text="❌ Без подписки", callback_data="admin:broadcast_filter:inactive")],
+        [InlineKeyboardButton(text="🇷🇺 Только RU", callback_data="admin:broadcast_filter:lang_ru")],
+        [InlineKeyboardButton(text="🇬🇧 Только EN", callback_data="admin:broadcast_filter:lang_en")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="admin:menu")],
+    ]
     
     await callback.message.edit_text(
         "📨 <b>Быстрая рассылка</b>\n\n"
-        "Введите текст сообщения для рассылки всем пользователям:\n\n"
-        "<i>Поддерживается HTML-разметка</i>",
+        "Выберите фильтр получателей:",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin:broadcast_filter:"))
+async def admin_broadcast_filter_select(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    state: FSMContext,
+):
+    """Выбор фильтра рассылки."""
+    if not is_admin(callback.from_user.id):
+        await callback.answer("⛔ Нет доступа", show_alert=True)
+        return
+    
+    filter_value = callback.data.split(":")[2]
+    
+    # Определяем filter_type и filter_language
+    filter_type = "all"
+    filter_language = "all"
+    filter_name = "Всем"
+    
+    if filter_value == "active":
+        filter_type = "active"
+        filter_name = "С активной подпиской"
+    elif filter_value == "inactive":
+        filter_type = "inactive"
+        filter_name = "Без подписки"
+    elif filter_value == "lang_ru":
+        filter_language = "ru"
+        filter_name = "Только RU"
+    elif filter_value == "lang_en":
+        filter_language = "en"
+        filter_name = "Только EN"
+    
+    # Считаем получателей
+    from bot.services.broadcast import count_broadcast_recipients
+    count = await count_broadcast_recipients(session, filter_type, filter_language)
+    
+    await state.update_data(
+        broadcast_filter_type=filter_type,
+        broadcast_filter_language=filter_language,
+        broadcast_filter_name=filter_name,
+        broadcast_recipients_count=count,
+    )
+    await state.set_state(AdminStates.broadcast_text)
+    
+    await callback.message.edit_text(
+        f"📨 <b>Быстрая рассылка</b>\n\n"
+        f"Фильтр: <b>{filter_name}</b>\n"
+        f"Получателей: <b>{count}</b>\n\n"
+        f"Введите текст сообщения:\n"
+        f"<i>Поддерживается HTML-разметка</i>",
         reply_markup=back_to_admin_keyboard()
     )
     await callback.answer()
@@ -1024,19 +1085,22 @@ async def admin_broadcast_confirm(
         await message.answer("❌ Текст не может быть пустым.", reply_markup=back_to_admin_keyboard())
         return
     
+    data = await state.get_data()
     await state.update_data(broadcast_text=text)
     
-    # Считаем получателей
-    total = await session.scalar(select(func.count(User.id)).where(User.is_banned == False))
+    filter_name = data.get('broadcast_filter_name', 'Всем')
+    count = data.get('broadcast_recipients_count', 0)
     
     buttons = [
-        [InlineKeyboardButton(text=f"✅ Отправить {total} юзерам", callback_data="admin:broadcast_send")],
+        [InlineKeyboardButton(text=f"✅ Отправить {count} юзерам", callback_data="admin:broadcast_send")],
+        [InlineKeyboardButton(text="🔄 Изменить фильтр", callback_data="admin:broadcast")],
         [InlineKeyboardButton(text="❌ Отмена", callback_data="admin:menu")],
     ]
     
     await message.answer(
         f"📨 <b>Подтверждение рассылки</b>\n\n"
-        f"Получателей: {total}\n\n"
+        f"Фильтр: <b>{filter_name}</b>\n"
+        f"Получателей: <b>{count}</b>\n\n"
         f"Текст:\n{text}",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
     )
@@ -1056,6 +1120,8 @@ async def admin_broadcast_execute(
     
     data = await state.get_data()
     text = data.get('broadcast_text')
+    filter_type = data.get('broadcast_filter_type', 'all')
+    filter_language = data.get('broadcast_filter_language', 'all')
     
     if not text:
         await callback.answer("Ошибка: текст не найден", show_alert=True)
@@ -1064,31 +1130,36 @@ async def admin_broadcast_execute(
     
     await callback.message.edit_text("⏳ Отправка...")
     
-    stmt = select(User).where(User.is_banned == False)
-    result = await session.execute(stmt)
-    users = result.scalars().all()
+    # Используем сервис рассылок
+    from bot.services.broadcast import quick_broadcast
     
-    sent = 0
-    failed = 0
-    
-    for user in users:
-        try:
-            await bot.send_message(user.telegram_id, text)
-            sent += 1
-        except:
-            failed += 1
+    result = await quick_broadcast(
+        session=session,
+        bot=bot,
+        message_text=text,
+        filter_type=filter_type,
+        filter_language=filter_language,
+    )
     
     await log_admin_action(
         session=session,
         admin_telegram_id=callback.from_user.id,
         action="broadcast",
-        details={"sent": sent, "failed": failed, "text": text[:100]},
+        details={
+            "sent": result["sent"],
+            "failed": result["failed"],
+            "total": result["total"],
+            "filter_type": filter_type,
+            "filter_language": filter_language,
+            "text": text[:100],
+        },
     )
     
     await callback.message.edit_text(
         f"✅ <b>Рассылка завершена!</b>\n\n"
-        f"📨 Отправлено: {sent}\n"
-        f"❌ Ошибок: {failed}",
+        f"📨 Отправлено: {result['sent']}\n"
+        f"❌ Ошибок: {result['failed']}\n"
+        f"👥 Всего: {result['total']}",
         reply_markup=back_to_admin_keyboard()
     )
     await state.clear()
