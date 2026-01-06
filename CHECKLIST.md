@@ -75,13 +75,6 @@
 ### README.md:
 - [x] Обновить с новым описанием проекта
 
-### Проверка:
-```cmd
-install.bat
-start_admin.bat
-:: http://localhost:8000/health → {"status": "ok"}
-```
-
 ---
 
 ## ЧАТ 2: Telegram бот — Ядро
@@ -131,12 +124,6 @@ start_admin.bat
 ### Windows .bat:
 - [x] `start_bot.bat`
 
-### Проверка:
-```cmd
-start_bot.bat
-:: /start в Telegram → выбор языка → меню
-```
-
 ---
 
 ## ЧАТ 3: CryptoBot оплата
@@ -155,12 +142,6 @@ start_bot.bat
 
 ### Сервис подписок:
 - [x] `bot/services/subscription.py`
-
-### Проверка:
-```cmd
-:: Добавить CRYPTOBOT_TOKEN в .env
-:: Выбрать тариф → Оплатить → webhook → подписка создана
-```
 
 ---
 
@@ -185,13 +166,6 @@ start_bot.bat
 ### Windows .bat:
 - [x] `start_userbot.bat`
 - [x] `generate_session.bat`
-
-### Проверка:
-```cmd
-generate_session.bat
-start_userbot.bat
-:: После оплаты → юзер в каналах
-```
 
 ---
 
@@ -229,13 +203,6 @@ start_userbot.bat
 ### Пробный период:
 - [x] Логика trial в оплате
 
-### Проверка:
-```cmd
-:: /admin → меню работает
-:: Промокод применяется
-:: Мои подписки показывает список
-```
-
 ---
 
 ## ЧАТ 6: Рассылки
@@ -250,12 +217,7 @@ start_userbot.bat
 - [x] `admin/schemas/broadcast.py`
 
 ### Админ в боте:
-- [x] Быстрая рассылка через /admin (с фильтрами)
-
-### Проверка:
-```cmd
-:: /admin → Рассылка → текст → отправлено X из Y
-```
+- [x] Быстрая рассылка через /admin
 
 ---
 
@@ -263,35 +225,29 @@ start_userbot.bat
 **Статус:** ✅ Готово
 
 ### Dashboard:
-- [ ] `admin/api/dashboard.py` — stats, charts, recent
+- [x] `admin/api/dashboard.py` — stats, charts, recent
 
 ### CRUD:
-- [ ] `admin/api/channels.py` + `admin/schemas/channel.py`
-- [ ] `admin/api/tariffs.py` + `admin/schemas/tariff.py`
-- [ ] `admin/api/users.py` + `admin/schemas/user.py` — + grant/revoke/ban
-- [ ] `admin/api/subscriptions.py` + `admin/schemas/subscription.py`
-- [ ] `admin/api/payments.py` + `admin/schemas/payment.py` — + manual confirm
-- [ ] `admin/api/promocodes.py` + `admin/schemas/promocode.py`
-- [ ] `admin/api/menu.py` + `admin/schemas/menu.py` — конструктор меню
-- [ ] `admin/api/faq.py` + `admin/schemas/faq.py` — вопросы-ответы
-- [ ] `admin/api/settings.py` + `admin/schemas/settings.py`
+- [x] `admin/api/channels.py` + `admin/schemas/channel.py`
+- [x] `admin/api/tariffs.py` + `admin/schemas/tariff.py`
+- [x] `admin/api/users.py` + `admin/schemas/user.py` — + grant/revoke/ban
+- [x] `admin/api/subscriptions.py` + `admin/schemas/subscription.py`
+- [x] `admin/api/payments.py` + `admin/schemas/payment.py` — + manual confirm
+- [x] `admin/api/promocodes.py` + `admin/schemas/promocode.py`
+- [x] `admin/api/menu.py` + `admin/schemas/menu.py` — конструктор меню
+- [x] `admin/api/faq.py` + `admin/schemas/faq.py` — вопросы-ответы
+- [x] `admin/api/settings.py` + `admin/schemas/settings.py`
 
 ### Экспорт и Бэкапы:
-- [ ] `admin/api/export.py` — CSV
-- [ ] `admin/api/backup.py`
-- [ ] `scripts/backup_db.py`
-- [ ] `backup_db.bat`
-
-### Проверка:
-```cmd
-start_admin.bat
-:: http://localhost:8000/docs — Swagger работает
-```
+- [x] `admin/api/export.py` — CSV
+- [x] `admin/api/backup.py`
+- [x] `scripts/backup_db.py`
+- [x] `backup_db.bat`
 
 ---
 
 ## ЧАТ 8: Админка — Frontend
-**Статус:** ✅ Готово
+**Статус:** ⬜ Не начат
 
 ### Базовая структура:
 - [ ] `frontend/package.json`, `vite.config.js`, `tailwind.config.js`
@@ -329,13 +285,6 @@ start_admin.bat
 - [ ] `stop_all.bat`
 - [ ] `build_frontend.bat`
 
-### Проверка:
-```cmd
-cd frontend && npm install && npm run dev
-:: http://localhost:3000 — Dashboard с графиками
-:: Тёмная тема переключается
-```
-
 ---
 
 ## 📊 ПРОГРЕСС
@@ -346,26 +295,25 @@ cd frontend && npm install && npm run dev
 | 2 | Бот — Ядро | ✅ | /start, меню, тарифы, i18n |
 | 3 | CryptoBot | ✅ | Оплата, webhook |
 | 4 | Userbot + Подписки | ✅ | Инвайт, кик, проверка |
-| 5 | Фичи бота | ✅ | Промокоды, админ, trial, **меню, FAQ** |
+| 5 | Фичи бота | ✅ | Промокоды, админ, trial, меню, FAQ |
 | 6 | Рассылки | ✅ | Broadcast система |
-| 7 | Backend API | ⬜ | Все endpoints, **menu, faq** |
-| 8 | Frontend | ⬜ | React + тёмная тема, **MenuBuilder** |
+| 7 | Backend API | ✅ | Все endpoints, menu, faq |
+| 8 | Frontend | ⬜ | React + тёмная тема, MenuBuilder |
 
 **Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
-**Прогресс:** 6/8 чатов (75%)
+**Прогресс:** 7/8 чатов (87.5%)
 
 ---
 
 ## 🚀 СТАРТ
 
-1. Напиши **"Чат 6"**
+1. Напиши **"Чат 8"**
 2. Claude делает всё из списка
 3. Claude выгружает в GitHub
 4. Ты проверяешь
-5. Пишешь **"Чат 7"** или замечания
-6. Повторяем до конца
+5. Проект готов!
 
 ---
 
-**Чат 5 завершён. Жду команду "Чат 6"!**
+**Готов. Жду команду "Чат 8"!**
