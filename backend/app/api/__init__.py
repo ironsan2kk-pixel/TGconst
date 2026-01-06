@@ -9,6 +9,7 @@ from .channels import router as channels_router
 from .tariffs import router as tariffs_router
 from .promocodes import router as promocodes_router
 from .broadcasts import router as broadcasts_router
+from .webhooks import router as webhooks_router
 
 # Главный роутер API
 api_router = APIRouter(prefix="/api")
@@ -38,4 +39,10 @@ api_router.include_router(
     broadcasts_router, 
     prefix="/bots/{bot_uuid}/broadcasts", 
     tags=["Broadcasts"]
+)
+
+# Webhooks (CryptoBot и другие)
+api_router.include_router(
+    webhooks_router,
+    tags=["Webhooks"]
 )
