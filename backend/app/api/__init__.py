@@ -8,6 +8,7 @@ from .bots import router as bots_router
 from .channels import router as channels_router
 from .tariffs import router as tariffs_router
 from .promocodes import router as promocodes_router
+from .broadcasts import router as broadcasts_router
 
 # Главный роутер API
 api_router = APIRouter(prefix="/api")
@@ -16,7 +17,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
 api_router.include_router(bots_router, prefix="/bots", tags=["Bots"])
 
-# Роутеры для работы с данными бота (каналы, тарифы, промокоды)
+# Роутеры для работы с данными бота (каналы, тарифы, промокоды, рассылки)
 # Префикс /bots/{bot_uuid} — все операции в контексте конкретного бота
 api_router.include_router(
     channels_router, 
@@ -32,4 +33,9 @@ api_router.include_router(
     promocodes_router, 
     prefix="/bots/{bot_uuid}/promocodes", 
     tags=["Promocodes"]
+)
+api_router.include_router(
+    broadcasts_router, 
+    prefix="/bots/{bot_uuid}/broadcasts", 
+    tags=["Broadcasts"]
 )
