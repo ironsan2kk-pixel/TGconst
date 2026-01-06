@@ -1,36 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Search, UserPlus, Ban, UserCheck, Eye, Download } from 'lucide-react'
-import { DataTable, Modal, ConfirmDialog, ExportButton, downloadBlob } from '../../components'
+import { Eye, UserPlus, UserMinus, Ban, CheckCircle, Download } from 'lucide-react'
+import { DataTable, Modal, ConfirmDialog, ExportButton } from '../../components'
 import { usersAPI, tariffsAPI } from '../../api/client'
 
-// Mock data
-const mockUsers = [
-  { id: 1, telegram_id: 123456789, username: 'ivan_p', first_name: 'Иван', language: 'ru', is_banned: false, has_subscription: true, created_at: '2024-01-15' },
-  { id: 2, telegram_id: 987654321, username: 'anna_k', first_name: 'Anna', language: 'en', is_banned: false, has_subscription: true, created_at: '2024-01-20' },
-  { id: 3, telegram_id: 456789123, username: 'sergey_m', first_name: 'Сергей', language: 'ru', is_banned: true, ban_reason: 'Спам', has_subscription: false, created_at: '2024-02-01' },
-  { id: 4, telegram_id: 789123456, username: null, first_name: 'Maria', language: 'en', is_banned: false, has_subscription: false, created_at: '2024-02-10' },
-]
-
-const mockTariffs = [
-  { id: 1, name_ru: 'Базовый', price: 10 },
-  { id: 2, name_ru: 'Премиум', price: 25 },
-  { id: 3, name_ru: 'VIP', price: 99 },
-]
-
 export default function Users() {
-  const [users, setUsers] = useState(mockUsers)
-  const [tariffs, setTariffs] = useState(mockTariffs)
-  const [loading, setLoading] = useState(false)
-  const [exporting, setExporting] = useState(false)
-  
-  // Modals
-  const [grantModal, setGrantModal] = useState({ open: false, user: null })
-  const [banModal, setBanModal] = useState({ open: false, user: null })
-  const [viewModal, setViewModal] = useState({ open: false, user: null })
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, action: null, user: null })
-  
-  // Forms
-  const [grantForm, setGrantForm] = useState({ tariff_id: '', days: 30 })
+  const [users, setUsers] = useState([])
+  const [tariffs, setTariffs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedUser, setSelectedUser] = useState(null)
+  const [isViewOpen, setIsViewOpen] = useState(false)
+  const [isGrantOpen, setIsGrantOpen] = useState(false)
+  const [isRevokeOpen, setIsRevokeOpen] = useState(false)
+  const [isBanOpen, setIsBanOpen] = useState(false)
+  const [grantData, setGrantData] = useState({ tariff_id: '', days: '30' })
   const [banReason, setBanReason] = useState('')
 
   useEffect(() => {
@@ -38,335 +20,310 @@ export default function Users() {
   }, [])
 
   const loadData = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      // const [usersRes, tariffsRes] = await Promise.all([
-      //   usersAPI.getAll(),
-      //   tariffsAPI.getAll()
-      // ])
-      // setUsers(usersRes.data)
-      // setTariffs(tariffsRes.data)
+      const [usersRes, tariffsRes] = await Promise.all([
+        usersAPI.getAll(),
+        tariffsAPI.getAll()
+      ])
+      setUsers(usersRes.data)
+      setTariffs(tariffsRes.data)
     } catch (error) {
-      console.error('Failed to load data:', error)
+      console.error('Error loading data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGrantAccess = async () => {
+  const handleGrant = async () => {
     try {
-      // await usersAPI.grantAccess(grantModal.user.id, grantForm)
-      setUsers(users.map(u => 
-        u.id === grantModal.user.id ? { ...u, has_subscription: true } : u
-      ))
-      setGrantModal({ open: false, user: null })
-      setGrantForm({ tariff_id: '', days: 30 })
+      await usersAPI.grantAccess(selectedUser.id, {
+        tariff_id: parseInt(grantData.tariff_id),
+        days: parseInt(grantData.days)
+      })
+      setIsGrantOpen(false)
+      setGrantData({ tariff_id: '', days: '30' })
+      loadData()
     } catch (error) {
-      console.error('Failed to grant access:', error)
+      console.error('Error granting access:', error)
     }
   }
 
-  const handleRevokeAccess = async () => {
+  const handleRevoke = async () => {
     try {
-      // await usersAPI.revokeAccess(confirmDialog.user.id)
-      setUsers(users.map(u => 
-        u.id === confirmDialog.user.id ? { ...u, has_subscription: false } : u
-      ))
-      setConfirmDialog({ open: false, action: null, user: null })
+      await usersAPI.revokeAccess(selectedUser.id)
+      setIsRevokeOpen(false)
+      loadData()
     } catch (error) {
-      console.error('Failed to revoke access:', error)
+      console.error('Error revoking access:', error)
     }
   }
 
   const handleBan = async () => {
     try {
-      // await usersAPI.ban(banModal.user.id, banReason)
-      setUsers(users.map(u => 
-        u.id === banModal.user.id ? { ...u, is_banned: true, ban_reason: banReason } : u
-      ))
-      setBanModal({ open: false, user: null })
+      await usersAPI.ban(selectedUser.id, banReason)
+      setIsBanOpen(false)
       setBanReason('')
+      loadData()
     } catch (error) {
-      console.error('Failed to ban user:', error)
+      console.error('Error banning user:', error)
     }
   }
 
-  const handleUnban = async () => {
+  const handleUnban = async (user) => {
     try {
-      // await usersAPI.unban(confirmDialog.user.id)
-      setUsers(users.map(u => 
-        u.id === confirmDialog.user.id ? { ...u, is_banned: false, ban_reason: null } : u
-      ))
-      setConfirmDialog({ open: false, action: null, user: null })
+      await usersAPI.unban(user.id)
+      loadData()
     } catch (error) {
-      console.error('Failed to unban user:', error)
-    }
-  }
-
-  const handleExport = async () => {
-    try {
-      setExporting(true)
-      // const response = await usersAPI.export('csv')
-      // downloadBlob(response.data, 'users.csv')
-      
-      // Mock export
-      const csv = 'id,telegram_id,username,first_name\n' + 
-        users.map(u => `${u.id},${u.telegram_id},${u.username || ''},${u.first_name}`).join('\n')
-      const blob = new Blob([csv], { type: 'text/csv' })
-      downloadBlob(blob, 'users.csv')
-    } catch (error) {
-      console.error('Failed to export:', error)
-    } finally {
-      setExporting(false)
+      console.error('Error unbanning user:', error)
     }
   }
 
   const columns = [
-    { key: 'id', label: 'ID' },
-    { 
-      key: 'telegram_id', 
-      label: 'Telegram ID',
-      render: (val) => <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{val}</code>
-    },
+    { key: 'id', label: 'ID', sortable: true },
+    { key: 'telegram_id', label: 'Telegram ID', sortable: true },
     { 
       key: 'username', 
       label: 'Username',
-      render: (val, row) => val ? `@${val}` : row.first_name
+      render: (value) => value ? `@${value}` : '—'
     },
+    { key: 'first_name', label: 'Имя', sortable: true },
     { 
       key: 'language', 
       label: 'Язык',
-      render: (val) => val?.toUpperCase() || '-'
+      render: (value) => value === 'ru' ? '🇷🇺' : '🇬🇧'
     },
     { 
       key: 'has_subscription', 
       label: 'Подписка',
-      render: (val) => (
-        <span className={`badge ${val ? 'badge-success' : 'badge-info'}`}>
-          {val ? '👑 Активна' : 'Нет'}
+      render: (value) => (
+        <span className={value ? 'badge-green' : 'badge-yellow'}>
+          {value ? 'Активна' : 'Нет'}
         </span>
       )
     },
     { 
       key: 'is_banned', 
       label: 'Статус',
-      render: (val, row) => val ? (
-        <span className="badge badge-danger" title={row.ban_reason}>🚫 Забанен</span>
+      render: (value) => value ? (
+        <span className="badge-red">Забанен</span>
       ) : (
-        <span className="badge badge-success">✓ Активен</span>
+        <span className="badge-green">Активен</span>
       )
-    },
-    { key: 'created_at', label: 'Регистрация' }
+    }
   ]
+
+  const actions = [
+    {
+      icon: Eye,
+      label: 'Просмотр',
+      onClick: (row) => {
+        setSelectedUser(row)
+        setIsViewOpen(true)
+      }
+    },
+    {
+      icon: UserPlus,
+      label: 'Выдать доступ',
+      onClick: (row) => {
+        setSelectedUser(row)
+        setIsGrantOpen(true)
+      }
+    },
+    {
+      icon: UserMinus,
+      label: 'Забрать доступ',
+      onClick: (row) => {
+        setSelectedUser(row)
+        setIsRevokeOpen(true)
+      },
+      show: (row) => row.has_subscription
+    },
+    {
+      icon: Ban,
+      label: 'Забанить',
+      onClick: (row) => {
+        setSelectedUser(row)
+        setIsBanOpen(true)
+      },
+      className: 'text-red-600 hover:text-red-700',
+      show: (row) => !row.is_banned
+    },
+    {
+      icon: CheckCircle,
+      label: 'Разбанить',
+      onClick: handleUnban,
+      className: 'text-green-600 hover:text-green-700',
+      show: (row) => row.is_banned
+    }
+  ]
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleString('ru-RU')
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Пользователи</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Всего: {users.length} | С подпиской: {users.filter(u => u.has_subscription).length}
+          <h1 className="text-2xl font-bold">Пользователи</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Всего: {users.length}
           </p>
         </div>
-        <ExportButton onClick={handleExport} loading={exporting} />
+        <ExportButton
+          data={users}
+          filename="users"
+          columns={['id', 'telegram_id', 'username', 'first_name', 'last_name', 'language', 'is_banned', 'created_at']}
+        />
       </div>
 
-      {/* Table */}
       <DataTable
-        columns={columns}
         data={users}
-        searchable={true}
-        searchKeys={['username', 'first_name', 'telegram_id']}
-        actions={(row) => (
-          <>
-            <button
-              onClick={() => setViewModal({ open: true, user: row })}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
-              title="Подробнее"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-            
-            {!row.has_subscription ? (
-              <button
-                onClick={() => setGrantModal({ open: true, user: row })}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-green-500"
-                title="Выдать доступ"
-              >
-                <UserPlus className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() => setConfirmDialog({ open: true, action: 'revoke', user: row })}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-yellow-500"
-                title="Забрать доступ"
-              >
-                <UserCheck className="w-4 h-4" />
-              </button>
-            )}
-            
-            {!row.is_banned ? (
-              <button
-                onClick={() => setBanModal({ open: true, user: row })}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500"
-                title="Забанить"
-              >
-                <Ban className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() => setConfirmDialog({ open: true, action: 'unban', user: row })}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-green-500"
-                title="Разбанить"
-              >
-                <UserCheck className="w-4 h-4" />
-              </button>
-            )}
-          </>
-        )}
+        columns={columns}
+        actions={actions}
+        loading={loading}
+        searchKeys={['username', 'first_name', 'last_name', 'telegram_id']}
       />
+
+      {/* View Modal */}
+      <Modal
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+        title="Информация о пользователе"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-500">ID:</span>
+                <span className="ml-2 font-medium">{selectedUser.id}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Telegram ID:</span>
+                <span className="ml-2 font-medium">{selectedUser.telegram_id}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Username:</span>
+                <span className="ml-2 font-medium">{selectedUser.username || '—'}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Имя:</span>
+                <span className="ml-2 font-medium">
+                  {selectedUser.first_name} {selectedUser.last_name}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">Язык:</span>
+                <span className="ml-2">{selectedUser.language === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English'}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Статус:</span>
+                <span className="ml-2">
+                  {selectedUser.is_banned ? (
+                    <span className="badge-red">Забанен</span>
+                  ) : (
+                    <span className="badge-green">Активен</span>
+                  )}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">Регистрация:</span>
+                <span className="ml-2">{formatDate(selectedUser.created_at)}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Последняя активность:</span>
+                <span className="ml-2">{formatDate(selectedUser.last_activity)}</span>
+              </div>
+            </div>
+            {selectedUser.is_banned && selectedUser.ban_reason && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <span className="text-sm text-red-600 dark:text-red-400">
+                  Причина бана: {selectedUser.ban_reason}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Grant Access Modal */}
       <Modal
-        isOpen={grantModal.open}
-        onClose={() => setGrantModal({ open: false, user: null })}
-        title={`Выдать доступ: ${grantModal.user?.username || grantModal.user?.first_name}`}
+        isOpen={isGrantOpen}
+        onClose={() => setIsGrantOpen(false)}
+        title="Выдать доступ"
       >
         <div className="space-y-4">
           <div>
             <label className="label">Тариф</label>
             <select
-              value={grantForm.tariff_id}
-              onChange={(e) => setGrantForm({ ...grantForm, tariff_id: e.target.value })}
+              value={grantData.tariff_id}
+              onChange={(e) => setGrantData({ ...grantData, tariff_id: e.target.value })}
               className="input"
-              required
             >
-              <option value="">Выберите тариф...</option>
+              <option value="">Выберите тариф</option>
               {tariffs.map(t => (
                 <option key={t.id} value={t.id}>{t.name_ru} (${t.price})</option>
               ))}
             </select>
           </div>
-          
           <div>
             <label className="label">Срок (дней)</label>
             <input
               type="number"
-              min="0"
-              value={grantForm.days}
-              onChange={(e) => setGrantForm({ ...grantForm, days: parseInt(e.target.value) || 0 })}
+              value={grantData.days}
+              onChange={(e) => setGrantData({ ...grantData, days: e.target.value })}
               className="input"
             />
-            <p className="text-xs text-gray-500 mt-1">0 = навсегда</p>
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <button onClick={() => setGrantModal({ open: false, user: null })} className="btn btn-secondary">
-              Отмена
-            </button>
-            <button onClick={handleGrantAccess} className="btn btn-success">
-              Выдать доступ
-            </button>
           </div>
         </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setIsGrantOpen(false)} className="btn-secondary">Отмена</button>
+          <button 
+            onClick={handleGrant} 
+            className="btn-primary"
+            disabled={!grantData.tariff_id}
+          >
+            Выдать
+          </button>
+        </div>
       </Modal>
+
+      {/* Revoke Access Confirm */}
+      <ConfirmDialog
+        isOpen={isRevokeOpen}
+        onClose={() => setIsRevokeOpen(false)}
+        onConfirm={handleRevoke}
+        title="Забрать доступ"
+        message={`Забрать доступ у пользователя ${selectedUser?.username || selectedUser?.first_name}?`}
+        confirmText="Забрать"
+        danger
+      />
 
       {/* Ban Modal */}
       <Modal
-        isOpen={banModal.open}
-        onClose={() => setBanModal({ open: false, user: null })}
-        title={`Забанить: ${banModal.user?.username || banModal.user?.first_name}`}
+        isOpen={isBanOpen}
+        onClose={() => setIsBanOpen(false)}
+        title="Забанить пользователя"
       >
-        <div className="space-y-4">
-          <div>
-            <label className="label">Причина бана</label>
-            <textarea
-              value={banReason}
-              onChange={(e) => setBanReason(e.target.value)}
-              placeholder="Укажите причину..."
-              className="input"
-              rows={3}
-            />
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <button onClick={() => setBanModal({ open: false, user: null })} className="btn btn-secondary">
-              Отмена
-            </button>
-            <button onClick={handleBan} className="btn btn-danger">
-              Забанить
-            </button>
-          </div>
+        <div>
+          <label className="label">Причина бана</label>
+          <textarea
+            value={banReason}
+            onChange={(e) => setBanReason(e.target.value)}
+            className="input"
+            rows={3}
+            placeholder="Укажите причину..."
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setIsBanOpen(false)} className="btn-secondary">Отмена</button>
+          <button onClick={handleBan} className="btn-primary bg-red-600 hover:bg-red-700">
+            Забанить
+          </button>
         </div>
       </Modal>
-
-      {/* View User Modal */}
-      <Modal
-        isOpen={viewModal.open}
-        onClose={() => setViewModal({ open: false, user: null })}
-        title="Информация о пользователе"
-      >
-        {viewModal.user && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Telegram ID</p>
-                <p className="font-medium">{viewModal.user.telegram_id}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Username</p>
-                <p className="font-medium">{viewModal.user.username ? `@${viewModal.user.username}` : '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Имя</p>
-                <p className="font-medium">{viewModal.user.first_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Язык</p>
-                <p className="font-medium">{viewModal.user.language?.toUpperCase()}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Регистрация</p>
-                <p className="font-medium">{viewModal.user.created_at}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Статус</p>
-                <p className="font-medium">
-                  {viewModal.user.is_banned ? '🚫 Забанен' : '✓ Активен'}
-                </p>
-              </div>
-            </div>
-            {viewModal.user.ban_reason && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  Причина бана: {viewModal.user.ban_reason}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
-
-      {/* Confirm Dialogs */}
-      <ConfirmDialog
-        isOpen={confirmDialog.open && confirmDialog.action === 'revoke'}
-        onClose={() => setConfirmDialog({ open: false, action: null, user: null })}
-        onConfirm={handleRevokeAccess}
-        title="Забрать доступ"
-        message={`Забрать доступ у ${confirmDialog.user?.username || confirmDialog.user?.first_name}?`}
-        variant="danger"
-      />
-      
-      <ConfirmDialog
-        isOpen={confirmDialog.open && confirmDialog.action === 'unban'}
-        onClose={() => setConfirmDialog({ open: false, action: null, user: null })}
-        onConfirm={handleUnban}
-        title="Разбанить пользователя"
-        message={`Разбанить ${confirmDialog.user?.username || confirmDialog.user?.first_name}?`}
-        variant="success"
-        confirmText="Разбанить"
-      />
     </div>
   )
 }
