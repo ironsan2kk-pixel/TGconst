@@ -1,605 +1,587 @@
-# ✅ ЧЕК-ЛИСТ: Конструктор Telegram-ботов
+# ✅ ЧЕК-ЛИСТ: Telegram-бот продажи доступа к каналам
 
-**Архитектура:** Без Docker, SQLite для каждого бота отдельно
+**Версия:** 4.0  
+**Платформа:** Windows Server  
+**Архитектура:** Один бот, SQLite, RU/EN
 
 ---
 
-## КАК РАБОТАЕМ
+## 📋 КАК РАБОТАЕМ
 
 ```
-Ты пишешь: "Этап 1" → Я делаю ВСЁ из этапа 1
-Ты проверяешь → Пишешь "OK" или замечания
-Ты пишешь: "Этап 2" → Я делаю этап 2
-... и так до конца
+1. Ты пишешь: "Чат 1"
+2. Я делаю ВСЁ из чата 1
+3. Выгружаю в GitHub репо
+4. Пишу "проверим"
+5. Ты проверяешь, пишешь "проверка"
+6. Я проверяю работоспособность
+7. Обновляю этот CHECKLIST.md в репо
+8. Переходим к "Чат 2"
 ```
 
 ---
 
-## ЭТАП 1: Структура проекта
-**Статус:** ✅ Готово
+## ЧАТ 1: Структура и база данных
+**Статус:** ⬜ Не начат
 
-### Задачи:
-- [x] Создать структуру папок
-- [x] requirements.txt
-- [x] .env.example
-- [x] backend/run.py
-- [x] backend/app/__init__.py
-- [x] backend/app/main.py
-- [x] backend/app/config.py
-- [x] backend/app/database.py
-- [x] Создать папку data/
+### Конфигурационные файлы:
+- [ ] `.gitignore`
+```
+data/
+venv/
+__pycache__/
+*.pyc
+.env
+logs/
+node_modules/
+dist/
+.vite/
+```
+- [ ] `.env.example` (все переменные)
+- [ ] `requirements.txt`
+- [ ] `README.md` (краткая инструкция)
 
----
+### Структура папок:
+```
+- [ ] data/
+- [ ] data/backups/
+- [ ] data/logs/
+- [ ] bot/
+- [ ] bot/models/
+- [ ] bot/handlers/
+- [ ] bot/keyboards/
+- [ ] bot/callbacks/
+- [ ] bot/middlewares/
+- [ ] bot/services/
+- [ ] bot/utils/
+- [ ] bot/locales/
+- [ ] userbot/
+- [ ] userbot/actions/
+- [ ] admin/
+- [ ] admin/api/
+- [ ] admin/schemas/
+- [ ] admin/utils/
+- [ ] frontend/
+- [ ] frontend/src/
+- [ ] scripts/
+```
 
-## ЭТАП 2: База данных — Модели
-**Статус:** ✅ Готово
+### SQLAlchemy модели (`bot/models/`):
+- [ ] `__init__.py` — экспорт всех моделей
+- [ ] `base.py` — Base, async engine, async session
+- [ ] `settings.py` — Settings (key-value)
+- [ ] `channel.py` — Channel
+- [ ] `tariff.py` — Tariff, TariffChannel
+- [ ] `user.py` — User
+- [ ] `subscription.py` — Subscription
+- [ ] `payment.py` — Payment
+- [ ] `promocode.py` — Promocode, PromocodeUse
+- [ ] `broadcast.py` — Broadcast
+- [ ] `custom_button.py` — CustomButton
+- [ ] `admin_log.py` — AdminLog
+- [ ] `analytics.py` — AnalyticsDaily
 
-### Задачи:
-- [x] backend/app/models/__init__.py
-- [x] backend/app/models/main_db.py
-- [x] backend/app/models/bot_db.py
-- [x] Функции init_main_db(), init_bot_db()
-- [x] Функции get_main_db(), get_bot_db()
-- [x] scripts/create_admin.py
+### База данных:
+- [ ] `bot/database.py` — get_session, init_db
+- [ ] Функция создания всех таблиц
+- [ ] Функция seed начальных настроек
 
----
+### Базовый Backend:
+- [ ] `admin/__init__.py`
+- [ ] `admin/run.py` — точка входа uvicorn
+- [ ] `admin/config.py` — Settings из .env
+- [ ] `admin/database.py` — подключение к БД
+- [ ] `admin/api/__init__.py` — главный роутер
+- [ ] `GET /health` → `{"status": "ok"}`
 
-## ЭТАП 3: Backend API — Auth
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] backend/app/utils/security.py
-- [x] backend/app/schemas/auth.py
-- [x] backend/app/api/deps.py
-- [x] backend/app/api/auth.py
-- [x] POST /api/auth/login
-- [x] GET /api/auth/me
-
----
-
-## ЭТАП 4: Backend API — CRUD ботов
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] backend/app/schemas/bot.py
-- [x] backend/app/api/bots.py
-- [x] Создание папки и bot.db для каждого бота
-- [x] CRUD эндпоинты для ботов
-
----
-
-## ЭТАП 5: Backend API — Каналы и тарифы
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] backend/app/schemas/channel.py
-- [x] backend/app/schemas/tariff.py
-- [x] backend/app/api/channels.py
-- [x] backend/app/api/tariffs.py
-
----
-
-## ЭТАП 6: Backend API — Промокоды
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] backend/app/schemas/promocode.py
-- [x] backend/app/api/promocodes.py
-- [x] Валидация промокодов
-
----
-
-## ЭТАП 7: Backend API — Рассылки
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] backend/app/schemas/broadcast.py
-- [x] backend/app/api/broadcasts.py
-- [x] backend/app/services/broadcast_worker.py
-
----
-
-## ЭТАП 8: Шаблон бота — Ядро
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] backend/bot_template/run.py
-- [x] backend/bot_template/loader.py
-- [x] backend/bot_template/config.py
-- [x] backend/bot_template/database.py
-- [x] backend/bot_template/handlers/
-- [x] backend/bot_template/keyboards/
-- [x] /start, меню, каналы, тарифы
-
----
-
-## ЭТАП 9: Шаблон бота — CryptoBot оплата
-**Статус:** ✅ Готово (Проверено)
-
-### Задачи:
-- [x] backend/app/services/cryptobot.py (CryptoBot API client)
-- [x] backend/bot_template/handlers/payment.py
-- [x] backend/bot_template/callbacks/__init__.py
-- [x] backend/bot_template/callbacks/payment.py
-- [x] backend/app/api/webhooks.py (webhook от CryptoBot)
-
-### Функционал:
-- [x] Создание инвойса (createInvoice)
-- [x] Отправка кнопки оплаты юзеру
-- [x] Приём webhook при оплате
-- [x] Обновление статуса в БД
-- [x] Уведомление юзера
-- [x] Ввод промокода перед оплатой
-
-### Эндпоинты webhook:
-- POST /api/webhooks/cryptobot/{bot_uuid} - webhook от CryptoBot
-- GET /api/webhooks/cryptobot/{bot_uuid}/test - тест соединения
-
----
-
-## ЭТАП 10: Userbot — Автодобавление
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] userbot/__init__.py
-- [x] userbot/run.py (FastAPI сервер для задач)
-- [x] userbot/config.py
-- [x] userbot/client.py (Pyrogram Client)
-- [x] userbot/actions/__init__.py
-- [x] userbot/actions/invite.py
-- [x] userbot/actions/kick.py
-- [x] backend/app/services/userbot.py (клиент для взаимодействия с userbot API)
-- [x] Обновление backend/app/api/webhooks.py (интеграция с userbot)
-- [x] scripts/generate_session.py (генерация session_string)
-- [x] scripts/start_userbot.sh
-- [x] scripts/supervisor/userbot.conf
-
-### Функционал:
-- [x] Pyrogram клиент с session_string
-- [x] HTTP API для получения задач (FastAPI на порту 8001)
-- [x] Добавление пользователя в канал (POST /invite)
-- [x] Удаление пользователя из канала (POST /kick)
-- [x] Проверка участия в канале (GET /check/{channel_id}/{user_id})
-- [x] Обработка ошибок (FloodWait, UserPrivacyRestricted, и др.)
-- [x] Повторные попытки при FloodWait
-
-### Эндпоинты userbot API (порт 8001):
-- GET /health - проверка состояния
-- POST /invite - добавить пользователя (асинхронно)
-- POST /invite/sync - добавить пользователя (синхронно)
-- POST /kick - удалить пользователя (асинхронно)
-- POST /kick/sync - удалить пользователя (синхронно)
-- POST /reconnect - переподключить userbot
-- GET /channel/{channel_id} - информация о канале
-- GET /check/{channel_id}/{user_id} - проверка участия
+### Windows .bat файлы (UTF-8):
+- [ ] `scripts/install.bat` — создание venv, установка зависимостей
+- [ ] `scripts/setup_db.bat` — инициализация БД
+- [ ] `scripts/start_admin.bat` — запуск FastAPI
+- [ ] `scripts/start_bot.bat` — заглушка
+- [ ] `scripts/start_all.bat` — запуск всего
+- [ ] `scripts/stop_all.bat` — остановка
 
 ### Проверка:
-```bash
-# Запуск userbot
-cd userbot && python run.py
+```cmd
+:: Установка
+scripts\install.bat
 
-# Проверка health
-curl http://localhost:8001/health
-# → {"status":"ok","userbot_connected":true,"userbot_info":{...}}
+:: Инициализация БД
+scripts\setup_db.bat
+:: → Создан data/bot.db
 
-# Тест добавления (синхронно)
-curl -X POST http://localhost:8001/invite/sync \
-  -H "Content-Type: application/json" \
-  -d '{"bot_uuid":"abc-123","user_telegram_id":123456789,"channel_id":1,"subscription_id":1}'
+:: Проверка таблиц
+sqlite3 data/bot.db ".tables"
+:: → settings channels tariffs tariff_channels users subscriptions ...
+
+:: Запуск API
+scripts\start_admin.bat
+:: http://localhost:8000/health → {"status": "ok"}
 ```
 
 ---
 
-## ЭТАП 11: Подписки — Проверка и автокик
-**Статус:** ✅ Готово
+## ЧАТ 2: Telegram бот — Ядро
+**Статус:** ⬜ Не начат
 
-### Задачи:
-- [x] backend/app/services/subscription_checker.py
-- [x] userbot/actions/kick.py (уже был реализован в Этапе 10)
-- [x] Фоновая задача проверки подписок (каждые 5 минут)
-- [x] Уведомление пользователей за 1 день до истечения
-- [x] Автокик через userbot при истечении подписки
-- [x] Обновление статусов is_active=0, auto_kicked=1
-- [x] API эндпоинты для ручной проверки и статуса
+### Конфигурация бота:
+- [ ] `bot/__init__.py`
+- [ ] `bot/config.py` — загрузка из .env и БД
+- [ ] `bot/loader.py` — Bot, Dispatcher
+- [ ] `bot/run.py` — точка входа
 
-### Функционал:
-- Проверка каждые 5 минут всех активных ботов
-- За 1 день до истечения → уведомление в Telegram
-- При истечении → кик через userbot + уведомление
-- Обновление is_active = 0, auto_kicked = 1
+### Локализация:
+- [ ] `bot/locales/__init__.py` — функция `t(key, lang, **kwargs)`
+- [ ] `bot/locales/ru.py` — все тексты RU
+- [ ] `bot/locales/en.py` — все тексты EN
 
-### API эндпоинты:
-- POST /api/bots/subscriptions/check - немедленная проверка всех подписок
-- GET /api/bots/subscriptions/checker-status - статус фоновой задачи
+Ключи локализации:
+```
+welcome, choose_language, language_changed
+main_menu, btn_tariffs, btn_my_subs, btn_promocode
+btn_language, btn_support
+tariffs_title, tariff_details, tariff_channels
+btn_buy, btn_back, btn_trial
+price_label, duration_days, duration_forever
+no_tariffs, no_subscriptions
+admin_only, user_banned
+new_user_notification, purchase_notification
+```
+
+### Middleware:
+- [ ] `bot/middlewares/__init__.py`
+- [ ] `bot/middlewares/database.py` — сессия в каждый запрос
+- [ ] `bot/middlewares/user.py` — регистрация/обновление юзера
+- [ ] `bot/middlewares/i18n.py` — определение языка
+- [ ] `bot/middlewares/ban.py` — проверка бана
+
+### Клавиатуры:
+- [ ] `bot/keyboards/__init__.py`
+- [ ] `bot/keyboards/inline.py`:
+  - `language_keyboard()`
+  - `main_menu_keyboard(lang, custom_buttons)`
+  - `tariffs_keyboard(tariffs, lang)`
+  - `tariff_detail_keyboard(tariff, lang, has_trial)`
+  - `back_keyboard(callback, lang)`
+- [ ] `bot/keyboards/reply.py`
+
+### Handlers:
+- [ ] `bot/handlers/__init__.py` — регистрация всех роутеров
+- [ ] `bot/handlers/start.py`:
+  - `/start` — приветствие, выбор языка
+  - `/start tariff_{id}` — deep link на тариф
+  - `/start ref_{source}` — сохранение UTM
+- [ ] `bot/handlers/menu.py`:
+  - Показ главного меню
+  - `/menu` команда
+- [ ] `bot/handlers/tariffs.py`:
+  - Список тарифов
+  - Детали тарифа (каналы в пакете)
+- [ ] `bot/handlers/language.py`:
+  - `/language` — смена языка
+  - Callback смены языка
+
+### Callbacks:
+- [ ] `bot/callbacks/__init__.py`
+- [ ] `bot/callbacks/language.py` — `lang:{code}`
+- [ ] `bot/callbacks/tariff.py` — `tariff:{id}`, `back:tariffs`
+
+### Сервисы:
+- [ ] `bot/services/__init__.py`
+- [ ] `bot/services/notifications.py`:
+  - `notify_admins(text)` — отправка всем админам
+  - Уведомление о новом юзере
+
+### Обновление .bat:
+- [ ] `scripts/start_bot.bat` — реальный запуск бота
 
 ### Проверка:
-```bash
-# Статус проверки подписок
-curl http://localhost:8000/api/bots/subscriptions/checker-status \
-  -H "Authorization: Bearer $TOKEN"
-# → {"is_running": true, "check_interval_seconds": 300, "notify_before_days": 1}
+```cmd
+:: Добавить BOT_TOKEN в .env
+:: Запуск бота
+scripts\start_bot.bat
 
-# Ручная проверка
-curl -X POST http://localhost:8000/api/bots/subscriptions/check \
-  -H "Authorization: Bearer $TOKEN"
-# → {"success": true, "message": "Проверка завершена", "result": {...}}
+:: В Telegram:
+:: /start → выбор языка → меню
+:: Кнопка "Тарифы" → список
+:: Deep link: ?start=tariff_1 → детали тарифа
 ```
 
 ---
 
-## ЭТАП 12: Шаблон бота — Промокоды и рассылки
-**Статус:** ✅ Готово
+## ЧАТ 3: CryptoBot оплата
+**Статус:** ⬜ Не начат
 
-### Задачи:
-- [x] backend/bot_template/handlers/promocode.py
-- [x] backend/bot_template/handlers/subscription.py
-- [x] backend/bot_template/handlers/support.py
-- [x] Интеграция промокодов в оплату
-- [x] Обновление handlers/__init__.py
+### CryptoBot API:
+- [ ] `bot/services/cryptobot.py`:
+  - `CryptoBotAPI` класс
+  - `create_invoice(amount, description, payload)`
+  - `get_invoice(invoice_id)`
+  - `verify_webhook(body, signature)`
 
-### Функционал:
-- [x] Кнопка "🎁 Промокод" в главном меню → ввод/проверка/удаление промокода
-- [x] Автоматическое применение скидки при оплате
-- [x] Кнопка "📋 Мои подписки" → список подписок с детализацией
-- [x] Продление подписки из списка подписок
-- [x] Отображение времени до истечения
-- [x] Кнопка "💬 Поддержка" → FAQ, информация об аккаунте, контакт поддержки
-- [x] FAQ с типовыми вопросами и ответами
+### Handlers оплаты:
+- [ ] `bot/handlers/payment.py`:
+  - Создание инвойса
+  - Отправка кнопки оплаты
+  - Проверка статуса (polling fallback)
 
-### Новые файлы:
-```
-backend/bot_template/handlers/
-├── promocode.py      # Работа с промокодами
-├── subscription.py   # Управление подписками
-└── support.py        # Поддержка и FAQ
-```
+### Callbacks:
+- [ ] `bot/callbacks/payment.py`:
+  - `pay:{tariff_id}` — начать оплату
+  - `pay:{tariff_id}:{promo_id}` — с промокодом
+  - `check:{payment_id}` — проверить статус
+
+### Webhook:
+- [ ] `admin/api/webhooks.py`:
+  - `POST /webhooks/cryptobot`
+  - Проверка подписи
+  - Обновление статуса платежа
+  - Создание подписки
+  - Уведомления
+
+### Сервис подписок:
+- [ ] `bot/services/subscription.py`:
+  - `create_subscription(user_id, tariff_id, payment_id)`
+  - `get_user_subscriptions(user_id)`
+  - `get_tariff_channels(tariff_id)`
 
 ### Проверка:
-```bash
-# В боте:
-# 1. Нажать "🎁 Промокод" → ввести код → увидеть скидку
-# 2. Выбрать тариф → промокод применяется автоматически
-# 3. Нажать "📋 Мои подписки" → увидеть список с таймерами
-# 4. Нажать "💬 Поддержка" → FAQ и информация
+```
+:: Добавить CRYPTOBOT_TOKEN в .env
+:: В боте: выбрать тариф → "Оплатить"
+:: Получить ссылку на CryptoBot
+:: После оплаты → подписка создана
 ```
 
 ---
 
-## ЭТАП 13: Оркестратор ботов
-**Статус:** ✅ Готово
+## ЧАТ 4: Userbot
+**Статус:** ⬜ Не начат
 
-### Задачи:
-- [x] backend/app/services/bot_manager.py
-- [x] Запуск бота как subprocess
-- [x] Сохранение PID в main.db
-- [x] Остановка по PID
-- [x] Перезапуск бота
-- [x] Мониторинг состояния процессов
-- [x] Автозапуск активных ботов при старте backend
-- [x] Остановка всех ботов при shutdown backend
-- [x] Обновление API эндпоинтов (реальная логика вместо заглушек)
+### Конфигурация:
+- [ ] `userbot/__init__.py`
+- [ ] `userbot/config.py` — API_ID, API_HASH, SESSION
+- [ ] `userbot/client.py` — Pyrogram Client singleton
 
-### Функционал:
-- start_bot(uuid) → запускает процесс, возвращает PID
-- stop_bot(uuid) → останавливает процесс по PID
-- restart_bot(uuid) → перезапускает бота
-- get_status(uuid) → running/stopped + uptime
-- autostart_active_bots() → запуск всех is_active=1 при старте
-- stop_all_bots() → остановка всех при shutdown
+### Действия:
+- [ ] `userbot/actions/__init__.py`
+- [ ] `userbot/actions/invite.py`:
+  - `invite_user(user_id, channel_id)`
+  - `invite_to_channels(user_id, channel_ids)`
+  - Обработка FloodWait
+  - Обработка UserPrivacyRestricted
+- [ ] `userbot/actions/kick.py`:
+  - `kick_user(user_id, channel_id)`
+  - `kick_from_channels(user_id, channel_ids)`
 
-### API эндпоинты:
-- POST /api/bots/{uuid}/start - запуск бота (реальный subprocess)
-- POST /api/bots/{uuid}/stop - остановка бота (реальный kill)
-- POST /api/bots/{uuid}/restart - перезапуск бота
-- GET /api/bots/{uuid}/status - статус с PID и uptime
-- GET /api/bots/manager/status - статус всех запущенных ботов
+### Точка входа:
+- [ ] `userbot/run.py` — запуск клиента
 
-### Новые/обновлённые файлы:
-```
-backend/app/services/
-└── bot_manager.py      # Оркестратор ботов (NEW)
+### Интеграция:
+- [ ] Вызов `invite_to_channels` после оплаты
+- [ ] Логирование результатов
 
-backend/app/api/
-└── bots.py             # Обновлён: реальная логика вместо заглушек
-
-backend/app/
-├── main.py             # Обновлён: автозапуск/остановка ботов
-└── database.py         # Обновлён: get_main_session()
-
-backend/app/services/
-└── __init__.py         # Обновлён: экспорт BotManager
-```
+### .bat файлы:
+- [ ] `scripts/start_userbot.bat`
+- [ ] `scripts/generate_session.bat` — получение session_string
 
 ### Проверка:
-```bash
-# Запуск бота
-curl -X POST http://localhost:8000/api/bots/$UUID/start \
-  -H "Authorization: Bearer $TOKEN"
-# → {"uuid": "...", "is_active": true, "process_pid": 12345, "message": "Бот успешно запущен (PID: 12345)"}
+```cmd
+:: Настроить USERBOT_* в .env
+:: Сгенерировать session_string
+scripts\generate_session.bat
 
-# Статус бота
-curl http://localhost:8000/api/bots/$UUID/status \
-  -H "Authorization: Bearer $TOKEN"
-# → {"uuid": "...", "is_active": true, "process_pid": 12345, "message": "Бот запущен (PID: 12345, uptime: 120s)"}
+:: Запуск userbot
+scripts\start_userbot.bat
 
-# Остановка бота
-curl -X POST http://localhost:8000/api/bots/$UUID/stop \
-  -H "Authorization: Bearer $TOKEN"
-# → {"uuid": "...", "is_active": false, "process_pid": null, "message": "Бот остановлен (был PID: 12345)"}
-
-# Перезапуск бота
-curl -X POST http://localhost:8000/api/bots/$UUID/restart \
-  -H "Authorization: Bearer $TOKEN"
-# → {"uuid": "...", "is_active": true, "process_pid": 12346, "message": "Бот успешно перезапущен"}
-
-# Статус всех ботов
-curl http://localhost:8000/api/bots/manager/status \
-  -H "Authorization: Bearer $TOKEN"
-# → {"running_count": 2, "bots": {"uuid1": {...}, "uuid2": {...}}}
-
-# При рестарте backend → активные боты автозапускаются
-# При остановке backend → все боты корректно останавливаются
+:: После оплаты → юзер добавлен в каналы
 ```
 
 ---
 
-## ЭТАП 14: Админка — Frontend
-**Статус:** ✅ Готово
+## ЧАТ 5: Подписки и напоминания
+**Статус:** ⬜ Не начат
 
-### Задачи:
-- [x] frontend/package.json (React 18.2 + Vite 5.0 + Tailwind CSS 3.4)
-- [x] frontend/vite.config.js (proxy /api → localhost:8000)
-- [x] frontend/tailwind.config.js (кастомные цвета primary)
-- [x] frontend/postcss.config.js
-- [x] frontend/index.html
-- [x] frontend/src/main.jsx
-- [x] frontend/src/App.jsx (роутинг всех страниц)
-- [x] frontend/src/index.css (Tailwind directives)
+### Checker подписок:
+- [ ] `bot/services/subscription_checker.py`:
+  - `check_expiring_subscriptions()` — найти истекающие
+  - `process_expired_subscriptions()` — обработать истёкшие
+  - `run_checker()` — asyncio loop
 
-### API клиенты:
-- [x] frontend/src/api/client.js (axios с auth interceptors)
-- [x] frontend/src/api/auth.js (login, getMe)
-- [x] frontend/src/api/bots.js (CRUD + start/stop/restart/status)
-- [x] frontend/src/api/channels.js (CRUD)
-- [x] frontend/src/api/tariffs.js (CRUD)
-- [x] frontend/src/api/promocodes.js (CRUD + validate)
-- [x] frontend/src/api/broadcasts.js (CRUD + start/cancel/stats)
+### Напоминания:
+- [ ] `bot/services/reminder.py`:
+  - `send_reminder_3_days(user_id, subscription)`
+  - `send_reminder_1_day(user_id, subscription)`
+  - Обновление флагов reminded_*
 
-### Контекст и хуки:
-- [x] frontend/src/context/AuthContext.jsx
-- [x] frontend/src/hooks/useAuth.js
+### Аналитика:
+- [ ] `bot/services/analytics.py`:
+  - `update_daily_stats()` — обновить статистику за день
+  - `get_stats_range(start_date, end_date)`
 
-### Компоненты:
-- [x] frontend/src/components/Layout.jsx
-- [x] frontend/src/components/Sidebar.jsx (динамическая навигация)
-- [x] frontend/src/components/Header.jsx
-- [x] frontend/src/components/ui/Button.jsx (5 вариантов, 3 размера, loading)
-- [x] frontend/src/components/ui/Input.jsx (Input, Textarea, Select, Checkbox)
-- [x] frontend/src/components/ui/Card.jsx (Card, CardHeader, CardTitle, CardContent, CardFooter)
-- [x] frontend/src/components/ui/Badge.jsx (Badge, Alert, Modal, EmptyState, Spinner)
-
-### Страницы:
-- [x] frontend/src/pages/Login.jsx
-- [x] frontend/src/pages/Dashboard.jsx
-- [x] frontend/src/pages/Bots/BotList.jsx
-- [x] frontend/src/pages/Bots/BotCreate.jsx
-- [x] frontend/src/pages/Bots/BotEdit.jsx
-- [x] frontend/src/pages/Channels/ChannelList.jsx
-- [x] frontend/src/pages/Channels/ChannelCreate.jsx
-- [x] frontend/src/pages/Channels/ChannelEdit.jsx
-- [x] frontend/src/pages/Tariffs/TariffList.jsx
-- [x] frontend/src/pages/Tariffs/TariffCreate.jsx
-- [x] frontend/src/pages/Tariffs/TariffEdit.jsx
-- [x] frontend/src/pages/Promocodes/PromocodeList.jsx
-- [x] frontend/src/pages/Promocodes/PromocodeCreate.jsx
-- [x] frontend/src/pages/Promocodes/PromocodeEdit.jsx
-- [x] frontend/src/pages/Broadcasts/BroadcastList.jsx
-- [x] frontend/src/pages/Broadcasts/BroadcastCreate.jsx
-- [x] frontend/src/pages/Broadcasts/BroadcastView.jsx
-
-### Структура файлов:
-```
-frontend/
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-├── postcss.config.js
-├── index.html
-└── src/
-    ├── main.jsx
-    ├── App.jsx
-    ├── index.css
-    ├── api/
-    │   ├── client.js
-    │   ├── auth.js
-    │   ├── bots.js
-    │   ├── channels.js
-    │   ├── tariffs.js
-    │   ├── promocodes.js
-    │   └── broadcasts.js
-    ├── context/
-    │   └── AuthContext.jsx
-    ├── hooks/
-    │   └── useAuth.js
-    ├── components/
-    │   ├── Layout.jsx
-    │   ├── Sidebar.jsx
-    │   ├── Header.jsx
-    │   └── ui/
-    │       ├── Button.jsx
-    │       ├── Input.jsx
-    │       ├── Card.jsx
-    │       └── Badge.jsx
-    └── pages/
-        ├── Login.jsx
-        ├── Dashboard.jsx
-        ├── Bots/
-        │   ├── BotList.jsx
-        │   ├── BotCreate.jsx
-        │   └── BotEdit.jsx
-        ├── Channels/
-        │   ├── ChannelList.jsx
-        │   ├── ChannelCreate.jsx
-        │   └── ChannelEdit.jsx
-        ├── Tariffs/
-        │   ├── TariffList.jsx
-        │   ├── TariffCreate.jsx
-        │   └── TariffEdit.jsx
-        ├── Promocodes/
-        │   ├── PromocodeList.jsx
-        │   ├── PromocodeCreate.jsx
-        │   └── PromocodeEdit.jsx
-        └── Broadcasts/
-            ├── BroadcastList.jsx
-            ├── BroadcastCreate.jsx
-            └── BroadcastView.jsx
-```
-
-### Функционал:
-- JWT авторизация с автоматическим редиректом на /login при 401
-- Динамическая навигация: главное меню или меню бота
-- CRUD для ботов с управлением (start/stop/restart)
-- CRUD для каналов и тарифов
-- CRUD для промокодов с валидацией
-- Управление рассылками (создание, запуск, отмена, статистика)
-- Модальные окна подтверждения удаления
-- Loading states и error handling
-- Responsive дизайн
+### Фоновые задачи:
+- [ ] Интеграция в `bot/run.py`:
+  - Checker каждые 5 минут
+  - Напоминания каждые 30 минут
+  - Аналитика каждый час
 
 ### Проверка:
-```bash
+```
+:: Создать подписку с коротким сроком
+:: Подождать → получить напоминание
+:: После истечения → юзер кикнут
+```
+
+---
+
+## ЧАТ 6: Фичи бота
+**Статус:** ⬜ Не начат
+
+### Промокоды:
+- [ ] `bot/handlers/promocode.py`:
+  - Кнопка "Ввести промокод"
+  - Валидация и применение
+- [ ] `bot/services/promocode.py`:
+  - `validate_promocode(code, tariff_id, user_id)`
+  - `apply_promocode(code, user_id, payment_id)`
+  - `calculate_discount(code, amount)`
+
+### Мои подписки:
+- [ ] `bot/handlers/subscription.py`:
+  - Список активных подписок
+  - Детали: до какого числа, какие каналы
+  - История покупок
+
+### Кастомные кнопки:
+- [ ] `bot/handlers/custom_buttons.py`:
+  - Загрузка из БД
+  - Обработка нажатий (URL → открыть, text → показать)
+
+### Админ в боте:
+- [ ] `bot/handlers/admin.py`:
+  - `/admin` — меню админа
+  - `/stats` — быстрая статистика
+  - Поиск юзера
+  - Выдача доступа
+  - Отзыв доступа
+  - Бан/разбан
+  - **Ручное подтверждение оплаты**
+
+### Callbacks админа:
+- [ ] `bot/callbacks/admin.py`:
+  - `admin:stats`
+  - `admin:find_user`
+  - `admin:grant:{user_id}`
+  - `admin:revoke:{user_id}:{sub_id}`
+  - `admin:ban:{user_id}`
+  - `admin:confirm_payment:{payment_id}`
+
+### Пробный период:
+- [ ] Кнопка "Попробовать бесплатно" в тарифе
+- [ ] Проверка: не брал ли уже trial
+- [ ] Создание подписки с `is_trial=1`
+
+### Проверка:
+```
+:: Промокоды: ввести → скидка применена
+:: Мои подписки: список с деталями
+:: /admin → меню работает
+:: Выдать доступ → юзер добавлен
+```
+
+---
+
+## ЧАТ 7: Рассылки
+**Статус:** ⬜ Не начат
+
+### Сервис рассылок:
+- [ ] `bot/services/broadcast.py`:
+  - `create_broadcast(data)` — создать
+  - `get_recipients(filter_type, language)` — получатели
+  - `start_broadcast(broadcast_id)` — запустить
+  - `pause_broadcast(broadcast_id)`
+  - `cancel_broadcast(broadcast_id)`
+  - `send_message(user_id, broadcast)` — отправить одному
+
+### Фоновая отправка:
+- [ ] Asyncio task
+- [ ] Обновление прогресса
+- [ ] Rate limiting (30 msg/sec)
+- [ ] Обработка ошибок
+
+### API рассылок:
+- [ ] `admin/api/broadcasts.py`:
+  - `GET /broadcasts` — список
+  - `POST /broadcasts` — создать
+  - `GET /broadcasts/{id}` — детали
+  - `POST /broadcasts/{id}/start`
+  - `POST /broadcasts/{id}/pause`
+  - `POST /broadcasts/{id}/cancel`
+
+### Schemas:
+- [ ] `admin/schemas/broadcast.py`
+
+### Проверка:
+```
+:: Создать рассылку через API
+:: Запустить → сообщения отправляются
+:: Проверить прогресс
+:: Пауза/отмена работают
+```
+
+---
+
+## ЧАТ 8: Админка Frontend
+**Статус:** ⬜ Не начат
+
+### Backend API (полный):
+
+#### Auth:
+- [ ] `admin/api/auth.py`:
+  - `POST /auth/login` → JWT
+  - `GET /auth/me`
+- [ ] `admin/api/deps.py` — get_current_admin
+- [ ] `admin/utils/security.py` — JWT, пароли
+
+#### Dashboard & Analytics:
+- [ ] `admin/api/dashboard.py`:
+  - `GET /dashboard/stats` — карточки
+  - `GET /dashboard/chart` — данные графика
+  - `GET /dashboard/recent` — последние события
+- [ ] `admin/api/analytics.py`:
+  - `GET /analytics/revenue` — доход по периодам
+  - `GET /analytics/users` — юзеры по периодам
+  - `GET /analytics/conversion` — воронка
+
+#### CRUD:
+- [ ] `admin/api/channels.py`
+- [ ] `admin/api/tariffs.py` (+ управление каналами в тарифе)
+- [ ] `admin/api/users.py`:
+  - CRUD + grant/revoke/ban/unban
+- [ ] `admin/api/subscriptions.py`
+- [ ] `admin/api/payments.py`:
+  - CRUD + **manual confirm**
+  - `POST /payments/{id}/confirm` — ручное подтверждение
+  - `POST /payments/manual` — создать ручной платёж
+- [ ] `admin/api/promocodes.py`
+- [ ] `admin/api/buttons.py`
+- [ ] `admin/api/settings.py`
+
+#### Schemas:
+- [ ] Все schemas для каждого API
+
+### Frontend React:
+
+#### Базовая структура:
+- [ ] `frontend/package.json`
+- [ ] `frontend/vite.config.js`
+- [ ] `frontend/tailwind.config.js` — dark mode
+- [ ] `frontend/index.html`
+- [ ] `frontend/src/main.jsx`
+- [ ] `frontend/src/App.jsx`
+- [ ] `frontend/src/index.css` — dark mode стили
+
+#### Тёмная тема:
+- [ ] `frontend/src/ThemeContext.jsx` — контекст темы
+- [ ] `frontend/src/components/ThemeToggle.jsx` — переключатель
+- [ ] Все компоненты с `dark:` классами
+
+#### API клиент:
+- [ ] `frontend/src/api/client.js`
+- [ ] `frontend/src/api/auth.js`
+- [ ] `frontend/src/api/dashboard.js`
+- [ ] `frontend/src/api/analytics.js`
+- [ ] `frontend/src/api/channels.js`
+- [ ] `frontend/src/api/tariffs.js`
+- [ ] `frontend/src/api/users.js`
+- [ ] `frontend/src/api/subscriptions.js`
+- [ ] `frontend/src/api/payments.js`
+- [ ] `frontend/src/api/promocodes.js`
+- [ ] `frontend/src/api/broadcasts.js`
+- [ ] `frontend/src/api/buttons.js`
+- [ ] `frontend/src/api/settings.js`
+
+#### Компоненты:
+- [ ] `Layout.jsx` — с sidebar и header
+- [ ] `Sidebar.jsx` — навигация
+- [ ] `Header.jsx` — с ThemeToggle
+- [ ] `StatsCard.jsx`
+- [ ] `DataTable.jsx` — с пагинацией и поиском
+- [ ] `Modal.jsx`
+- [ ] `ConfirmDialog.jsx`
+- [ ] `Charts/RevenueChart.jsx` — Recharts
+- [ ] `Charts/UsersChart.jsx`
+- [ ] `Charts/ConversionChart.jsx`
+
+#### Страницы:
+- [ ] `Login.jsx`
+- [ ] `Dashboard.jsx` — карточки + графики
+- [ ] `Analytics.jsx` — детальная аналитика
+- [ ] `Channels/List.jsx`, `Channels/Form.jsx`
+- [ ] `Tariffs/List.jsx`, `Tariffs/Form.jsx` — с выбором каналов
+- [ ] `Users/List.jsx`, `Users/Detail.jsx` — с действиями
+- [ ] `Subscriptions/List.jsx`
+- [ ] `Payments/List.jsx` — с кнопкой "Подтвердить"
+- [ ] `Payments/ManualForm.jsx` — создание ручного платежа
+- [ ] `Promocodes/List.jsx`, `Promocodes/Form.jsx`
+- [ ] `Broadcasts/List.jsx`, `Broadcasts/Form.jsx`, `Broadcasts/View.jsx`
+- [ ] `Buttons/List.jsx`, `Buttons/Form.jsx`
+- [ ] `Settings.jsx`
+
+#### .bat файлы:
+- [ ] `scripts/start_frontend.bat`
+- [ ] `scripts/build_frontend.bat`
+
+### Проверка:
+```cmd
+:: Backend
+scripts\start_admin.bat
+:: http://localhost:8000/docs → Swagger
+
+:: Frontend
 cd frontend
 npm install
 npm run dev
-# http://localhost:3000 → логин → дашборд → CRUD работает
-```
+:: http://localhost:3000
 
----
-
-## ЭТАП 15: Деплой и документация
-**Статус:** ✅ Готово
-
-### Задачи:
-- [x] scripts/install.sh
-- [x] supervisor конфиги (backend.conf, userbot.conf)
-- [x] nginx.conf
-- [x] README.md
-- [x] Windows .bat файлы
-
-### Созданные файлы (Linux):
-```
-scripts/
-├── install.sh                  # Автоматическая установка
-└── supervisor/
-    ├── backend.conf            # Конфиг supervisor для backend
-    └── userbot.conf            # Конфиг supervisor для userbot
-
-nginx.conf                      # Конфиг nginx с SSL
-README.md                       # Полная документация
-```
-
-### Созданные файлы (Windows):
-```
-install.bat             # Установка (venv, зависимости, .env, админ)
-start_backend.bat       # Запуск FastAPI backend
-start_userbot.bat       # Запуск Pyrogram userbot
-start_frontend.bat      # Запуск React dev server
-start_all.bat           # Запуск всех компонентов (3 окна)
-stop_all.bat            # Остановка всех процессов
-generate_session.bat    # Генерация Pyrogram session
-build_frontend.bat      # Сборка frontend для production
-create_admin.bat        # Создание админа
-```
-
-### Проверка (Linux/VPS):
-```bash
-chmod +x scripts/install.sh
-./scripts/install.sh
-
-# Настройка supervisor
-sudo cp scripts/supervisor/*.conf /etc/supervisor/conf.d/
-sudo supervisorctl reread
-sudo supervisorctl update
-
-# Настройка nginx
-sudo cp nginx.conf /etc/nginx/sites-available/bot-constructor
-sudo ln -s /etc/nginx/sites-available/bot-constructor /etc/nginx/sites-enabled/
-sudo certbot --nginx -d your-domain.com
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-### Проверка (Windows):
-```cmd
-:: Установка
-install.bat
-
-:: Запуск всего
-start_all.bat
-
-:: Или по отдельности:
-start_backend.bat
-start_userbot.bat
-start_frontend.bat
+:: Проверить:
+:: - Логин работает
+:: - Dashboard с графиками
+:: - Тёмная тема переключается
+:: - Все CRUD работают
+:: - Ручное подтверждение платежа
 ```
 
 ---
 
 ## 📊 ПРОГРЕСС
 
-| # | Этап | Статус |
-|---|------|--------|
-| 1 | Структура проекта | ✅ |
-| 2 | База данных — Модели | ✅ |
-| 3 | Backend API — Auth | ✅ |
-| 4 | Backend API — CRUD ботов | ✅ |
-| 5 | Backend API — Каналы и тарифы | ✅ |
-| 6 | Backend API — Промокоды | ✅ |
-| 7 | Backend API — Рассылки | ✅ |
-| 8 | Шаблон бота — Ядро | ✅ |
-| 9 | Шаблон бота — CryptoBot оплата | ✅ |
-| 10 | Userbot — Автодобавление | ✅ |
-| 11 | Подписки — Проверка и автокик | ✅ |
-| 12 | Шаблон бота — Промокоды и рассылки | ✅ |
-| 13 | Оркестратор ботов | ✅ |
-| 14 | Админка — Frontend | ✅ |
-| 15 | Деплой и документация | ✅ |
+| # | Чат | Статус | Описание |
+|---|-----|--------|----------|
+| 1 | Структура и БД | ⬜ | Папки, модели, .bat файлы |
+| 2 | Бот — Ядро | ⬜ | /start, меню, тарифы, i18n |
+| 3 | CryptoBot | ⬜ | Оплата, webhook |
+| 4 | Userbot | ⬜ | Invite/kick |
+| 5 | Подписки | ⬜ | Checker, напоминания |
+| 6 | Фичи бота | ⬜ | Промокоды, админ, ручная оплата |
+| 7 | Рассылки | ⬜ | Broadcast система |
+| 8 | Админка | ⬜ | React + тёмная тема + графики |
 
-**Легенда:** ⬜ Не начат | ✅ Готово
-
-**Прогресс:** 15/15 этапов (100%) 🎉
+**Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
 ---
 
-## 🎉 ПРОЕКТ ЗАВЕРШЁН!
+## 🚀 СТАРТ
 
-Все 15 этапов выполнены. Система готова к деплою.
+1. Напиши **"Чат 1"**
+2. Я делаю всё из списка
+3. Выгружаю в GitHub
+4. Пишу **"проверим"**
+5. Ты проверяешь, пишешь **"проверка"**
+6. Я проверяю и обновляю чек-лист
+7. Переходим к **"Чат 2"**
 
-### Финальная структура:
-```
-telegram-bot-constructor/
-├── backend/                # FastAPI backend + Bot template
-├── userbot/                # Pyrogram userbot
-├── frontend/               # React admin panel
-├── scripts/
-│   ├── install.sh          # Автоустановка
-│   ├── create_admin.py
-│   ├── generate_session.py
-│   └── supervisor/
-│       ├── backend.conf
-│       └── userbot.conf
-├── data/                   # SQLite databases
-├── nginx.conf              # Production nginx config
-├── requirements.txt
-├── .env.example
-├── README.md               # Полная документация
-├── MASTER_PLAN.md
-└── CHECKLIST.md
-```
+---
 
-### Деплой:
-1. `./scripts/install.sh`
-2. Настроить `.env`
-3. Скопировать supervisor конфиги
-4. Настроить nginx + SSL
-5. Готово! 🚀
-
+**Готов. Жду команду "Чат 1"!**
