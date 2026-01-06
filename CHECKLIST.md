@@ -239,18 +239,18 @@ start_userbot.bat
 ---
 
 ## ЧАТ 6: Рассылки
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Сервис рассылок:
-- [ ] `bot/services/broadcast.py`
-- [ ] create_broadcast(), start_broadcast(), pause/cancel
+- [x] `bot/services/broadcast.py`
+- [x] create_broadcast(), start_broadcast(), pause/cancel
 
 ### API для админки:
-- [ ] `admin/api/broadcasts.py`
-- [ ] `admin/schemas/broadcast.py`
+- [x] `admin/api/broadcasts.py`
+- [x] `admin/schemas/broadcast.py`
 
 ### Админ в боте:
-- [ ] Быстрая рассылка через /admin
+- [x] Быстрая рассылка через /admin (с фильтрами)
 
 ### Проверка:
 ```cmd
@@ -260,7 +260,7 @@ start_userbot.bat
 ---
 
 ## ЧАТ 7: Админка — Backend API
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Dashboard:
 - [ ] `admin/api/dashboard.py` — stats, charts, recent
@@ -291,7 +291,7 @@ start_admin.bat
 ---
 
 ## ЧАТ 8: Админка — Frontend
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Базовая структура:
 - [ ] `frontend/package.json`, `vite.config.js`, `tailwind.config.js`
@@ -347,13 +347,13 @@ cd frontend && npm install && npm run dev
 | 3 | CryptoBot | ✅ | Оплата, webhook |
 | 4 | Userbot + Подписки | ✅ | Инвайт, кик, проверка |
 | 5 | Фичи бота | ✅ | Промокоды, админ, trial, **меню, FAQ** |
-| 6 | Рассылки | ⬜ | Broadcast система |
+| 6 | Рассылки | ✅ | Broadcast система |
 | 7 | Backend API | ⬜ | Все endpoints, **menu, faq** |
 | 8 | Frontend | ⬜ | React + тёмная тема, **MenuBuilder** |
 
 **Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
-**Прогресс:** 5/8 чатов (62.5%)
+**Прогресс:** 6/8 чатов (75%)
 
 ---
 
