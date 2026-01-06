@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react'
 
-const EMOJI_LIST = ['📺', '💳', '🎁', '❓', '📚', '📢', '🌐', '💬', '⚙️', '📖', '🎥', '📝', '🔗', '📁', '⭐', '🏆', '🎯', '💡', '🔥', '💎']
+const EMOJI_LIST = ['📺', '💳', '🎁', '❓', '📚', '📢', '🌐', '💬', '⚙️', '📖', '🎥', '📝', '🔗', '📁', '⭐', '🏆', '🎯', '💡', '🔥', '💎', '🚀', '📞', '📦']
 
 export default function MenuItemForm({ 
-  initialData,  // Support both naming conventions
+  initialData,
   item,
   parentId, 
-  onSubmit,     // Support both naming conventions
+  onSubmit,
   onSave,
   onCancel 
 }) {
-  // Use whichever prop is provided
   const data = initialData || item || {}
   const handleSave = onSubmit || onSave
 
@@ -21,6 +20,7 @@ export default function MenuItemForm({
     text_en: '',
     icon: '',
     value: '',
+    photo_file_id: '',
     visibility: 'all',
     visibility_language: 'all',
     is_active: true,
@@ -37,6 +37,7 @@ export default function MenuItemForm({
       text_en: '',
       icon: '',
       value: '',
+      photo_file_id: '',
       visibility: 'all',
       visibility_language: 'all',
       is_active: true,
@@ -71,7 +72,7 @@ export default function MenuItemForm({
         >
           <option value="section">📁 Раздел (подменю)</option>
           <option value="link">🔗 Ссылка</option>
-          <option value="text">💬 Текст</option>
+          <option value="text">💬 Текст (+ фото)</option>
           <option value="faq">❓ FAQ</option>
           <option value="system">⚙️ Системное действие</option>
         </select>
@@ -100,18 +101,16 @@ export default function MenuItemForm({
       <div>
         <label className="label">Иконка</label>
         <div className="flex flex-wrap gap-2 mb-2">
-          {EMOJI_LIST.map(emoji => (
+          {EMOJI_LIST.map((emoji) => (
             <button
               key={emoji}
               type="button"
               onClick={() => handleChange('icon', emoji)}
-              className={`
-                w-10 h-10 text-xl rounded-lg border-2 transition-colors
-                ${form.icon === emoji 
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' 
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                }
-              `}
+              className={`w-10 h-10 text-xl rounded border transition-colors ${
+                form.icon === emoji 
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+              }`}
             >
               {emoji}
             </button>
@@ -121,8 +120,9 @@ export default function MenuItemForm({
           type="text"
           value={form.icon || ''}
           onChange={(e) => handleChange('icon', e.target.value)}
-          placeholder="Или введите свой emoji"
+          placeholder="Или введите свою иконку"
           className="input"
+          maxLength={10}
         />
       </div>
 
@@ -166,16 +166,31 @@ export default function MenuItemForm({
       )}
 
       {form.type === 'text' && (
-        <div>
-          <label className="label">Текст сообщения</label>
-          <textarea
-            value={form.value || ''}
-            onChange={(e) => handleChange('value', e.target.value)}
-            placeholder="Текст, который отправится при нажатии"
-            className="input"
-            rows={4}
-          />
-        </div>
+        <>
+          <div>
+            <label className="label">Текст сообщения</label>
+            <textarea
+              value={form.value || ''}
+              onChange={(e) => handleChange('value', e.target.value)}
+              placeholder="Текст, который отправится при нажатии. Поддерживает HTML: <b>жирный</b>, <i>курсив</i>"
+              className="input"
+              rows={4}
+            />
+          </div>
+          <div>
+            <label className="label">Фото (file_id)</label>
+            <input
+              type="text"
+              value={form.photo_file_id || ''}
+              onChange={(e) => handleChange('photo_file_id', e.target.value)}
+              placeholder="AgACAgIAAxkBAAI... (опционально)"
+              className="input"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Отправьте фото боту и получите file_id через @RawDataBot
+            </p>
+          </div>
+        </>
       )}
 
       {/* Visibility */}
