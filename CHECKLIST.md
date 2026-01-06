@@ -26,7 +26,7 @@
 | 1 | Структура проекта | ✅ Готов |
 | 2 | База данных — Модели | ✅ Готов |
 | 3 | Backend API — Auth | ✅ |
-| 4 | Backend API — CRUD ботов | ⬜ |
+| 4 | Backend API — CRUD ботов | ✅ |
 | 5 | Backend API — Каналы и тарифы | ⬜ |
 | 6 | Backend API — Промокоды | ⬜ |
 | 7 | Backend API — Рассылки | ⬜ |
@@ -142,22 +142,23 @@ curl http://localhost:8000/api/auth/me \
 ---
 
 ## ЭТАП 4: Backend API — CRUD ботов
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Задачи:
-- [ ] backend/app/schemas/bot.py (BotCreate, BotUpdate, BotResponse)
-- [ ] backend/app/api/bots.py
-- [ ] При создании бота — создавать папку data/bots/{uuid}/ и bot.db
-- [ ] При удалении бота — удалять папку
+- [x] backend/app/schemas/bot.py (BotCreate, BotUpdate, BotResponse, BotListResponse, BotStatusResponse)
+- [x] backend/app/api/bots.py
+- [x] При создании бота — создавать папку data/bots/{uuid}/ и bot.db
+- [x] При удалении бота — удалять папку
 
 ### Эндпоинты:
-- [ ] GET /api/bots — список ботов
-- [ ] POST /api/bots — создать бота
-- [ ] GET /api/bots/{uuid} — получить бота
-- [ ] PUT /api/bots/{uuid} — обновить
-- [ ] DELETE /api/bots/{uuid} — удалить
-- [ ] POST /api/bots/{uuid}/start — запустить (заглушка)
-- [ ] POST /api/bots/{uuid}/stop — остановить (заглушка)
+- [x] GET /api/bots — список ботов
+- [x] POST /api/bots — создать бота
+- [x] GET /api/bots/{uuid} — получить бота
+- [x] PUT /api/bots/{uuid} — обновить
+- [x] DELETE /api/bots/{uuid} — удалить
+- [x] POST /api/bots/{uuid}/start — запустить (заглушка)
+- [x] POST /api/bots/{uuid}/stop — остановить (заглушка)
+- [x] GET /api/bots/{uuid}/status — статус бота
 
 ### Проверка:
 ```bash
