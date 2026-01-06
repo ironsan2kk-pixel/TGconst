@@ -25,6 +25,15 @@ from .tariff import (
     TariffResponse,
     TariffListResponse,
 )
+from .promocode import (
+    PromocodeCreate,
+    PromocodeUpdate,
+    PromocodeResponse,
+    PromocodeListResponse,
+    PromocodeValidateRequest,
+    PromocodeValidateResponse,
+    PromocodeClearLimitRequest,
+)
 
 __all__ = [
     # Auth
@@ -47,4 +56,12 @@ __all__ = [
     "TariffUpdate",
     "TariffResponse",
     "TariffListResponse",
+    # Promocode
+    "PromocodeCreate",
+    "PromocodeUpdate",
+    "PromocodeResponse",
+    "PromocodeListResponse",
+    "PromocodeValidateRequest",
+    "PromocodeValidateResponse",
+    "PromocodeClearLimitRequest",
 ]
