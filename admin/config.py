@@ -1,75 +1,67 @@
-"""Admin panel configuration."""
+"""
+Admin Panel Configuration
+Настройки для FastAPI backend
+"""
 
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Application settings."""
-    
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"  # Игнорировать лишние поля
-    )
-    
-    # Telegram Bot
-    bot_token: str = ""
-    
-    # CryptoBot
-    cryptobot_token: str = ""
-    cryptobot_webhook_secret: str = ""
-    
-    # Userbot
-    userbot_api_id: str = ""
-    userbot_api_hash: str = ""
-    userbot_phone: str = ""
-    userbot_session_string: str = ""
-    
-    # Admin
-    admin_ids: str = ""  # Comma-separated telegram IDs
-    
-    # Database
-    database_path: str = "./data/bot.db"
-    backup_dir: str = "./data/backups"
+    """Настройки админ-панели"""
     
     # Server
-    backend_host: str = "0.0.0.0"
-    backend_port: int = 8001
-    webhook_base_url: str = ""
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    DEBUG: bool = True
+    SECRET_KEY: str = "your-super-secret-key-change-this"
     
-    # App
-    debug: bool = False
-    secret_key: str = "change-this-in-production"
-    default_language: str = "ru"
+    # Database
+    DATABASE_PATH: str = "./data/bot.db"
+    BACKUP_DIR: str = "./data/backups"
     
-    @property
-    def host(self) -> str:
-        """Alias for backend_host."""
-        return self.backend_host
+    # CORS
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     
-    @property
-    def port(self) -> int:
-        """Alias for backend_port."""
-        return self.backend_port
+    # Bot token (для проверки)
+    BOT_TOKEN: str = ""
+    
+    # Admin IDs
+    ADMIN_IDS: str = ""  # Comma-separated
     
     @property
     def database_url(self) -> str:
-        """Get SQLAlchemy database URL."""
-        return f"sqlite+aiosqlite:///{self.database_path}"
+        """SQLite URL для SQLAlchemy"""
+        return f"sqlite+aiosqlite:///{self.DATABASE_PATH}"
     
     @property
-    def admin_id_list(self) -> list[int]:
-        """Get list of admin telegram IDs."""
-        if not self.admin_ids:
+    def admin_ids_list(self) -> list[int]:
+        """Список admin IDs"""
+        if not self.ADMIN_IDS:
             return []
-        return [int(x.strip()) for x in self.admin_ids.split(",") if x.strip()]
+        return [int(x.strip()) for x in self.ADMIN_IDS.split(",") if x.strip()]
+    
+    @property
+    def backup_path(self) -> Path:
+        """Путь к директории бэкапов"""
+        path = Path(self.BACKUP_DIR)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
-# Create settings instance
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    """Получить настройки (с кешированием)"""
+    return Settings()
 
-# Ensure directories exist
-Path(settings.database_path).parent.mkdir(parents=True, exist_ok=True)
-Path(settings.backup_dir).mkdir(parents=True, exist_ok=True)
+
+# Singleton
+settings = get_settings()
