@@ -26,7 +26,9 @@ export default function Channels() {
     setLoading(true)
     try {
       const response = await channelsAPI.getAll()
-      setChannels(response.data)
+      // Handle paginated or array response
+      const data = response.data.items || response.data
+      setChannels(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading channels:', error)
     } finally {
@@ -36,10 +38,14 @@ export default function Channels() {
 
   const handleSubmit = async () => {
     try {
+      const data = {
+        ...formData,
+        channel_id: parseInt(formData.channel_id)
+      }
       if (selectedChannel) {
-        await channelsAPI.update(selectedChannel.id, formData)
+        await channelsAPI.update(selectedChannel.id, data)
       } else {
-        await channelsAPI.create(formData)
+        await channelsAPI.create(data)
       }
       setIsModalOpen(false)
       resetForm()
@@ -63,31 +69,19 @@ export default function Channels() {
   const openEditModal = (channel) => {
     setSelectedChannel(channel)
     setFormData({
-      channel_id: channel.channel_id,
-      username: channel.username,
-      title: channel.title,
+      channel_id: channel.channel_id?.toString() || '',
+      username: channel.username || '',
+      title: channel.title || '',
       description: channel.description || '',
       invite_link: channel.invite_link || '',
-      is_active: channel.is_active
+      is_active: channel.is_active !== false
     })
     setIsModalOpen(true)
   }
 
-  const openDeleteDialog = (channel) => {
-    setSelectedChannel(channel)
-    setIsDeleteOpen(true)
-  }
-
   const resetForm = () => {
     setSelectedChannel(null)
-    setFormData({
-      channel_id: '',
-      username: '',
-      title: '',
-      description: '',
-      invite_link: '',
-      is_active: true
-    })
+    setFormData({ channel_id: '', username: '', title: '', description: '', invite_link: '', is_active: true })
   }
 
   const columns = [
@@ -97,41 +91,18 @@ export default function Channels() {
       key: 'username', 
       label: 'Username',
       render: (value) => value ? (
-        <a 
-          href={`https://t.me/${value}`} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-primary-600 hover:text-primary-700 flex items-center gap-1"
-        >
-          @{value}
-          <ExternalLink className="w-3 h-3" />
+        <a href={`https://t.me/${value}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 flex items-center gap-1">
+          @{value} <ExternalLink className="w-3 h-3" />
         </a>
       ) : '—'
     },
     { key: 'title', label: 'Название', sortable: true },
-    { 
-      key: 'is_active', 
-      label: 'Статус',
-      render: (value) => (
-        <span className={value ? 'badge-green' : 'badge-red'}>
-          {value ? 'Активен' : 'Отключен'}
-        </span>
-      )
-    }
+    { key: 'is_active', label: 'Статус', render: (value) => <span className={value ? 'badge-green' : 'badge-red'}>{value ? 'Активен' : 'Отключен'}</span> }
   ]
 
   const actions = [
-    {
-      icon: Edit,
-      label: 'Редактировать',
-      onClick: openEditModal
-    },
-    {
-      icon: Trash2,
-      label: 'Удалить',
-      onClick: openDeleteDialog,
-      className: 'text-red-600 hover:text-red-700'
-    }
+    { icon: Edit, label: 'Редактировать', onClick: openEditModal },
+    { icon: Trash2, label: 'Удалить', onClick: (row) => { setSelectedChannel(row); setIsDeleteOpen(true) }, className: 'text-red-600 hover:text-red-700' }
   ]
 
   return (
@@ -139,128 +110,49 @@ export default function Channels() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Каналы</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Управление приватными каналами
-          </p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Управление приватными каналами</p>
         </div>
-        <button
-          onClick={() => {
-            resetForm()
-            setIsModalOpen(true)
-          }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Добавить канал
+        <button onClick={() => { resetForm(); setIsModalOpen(true) }} className="btn-primary flex items-center gap-2">
+          <Plus className="w-4 h-4" /> Добавить канал
         </button>
       </div>
 
-      <DataTable
-        data={channels}
-        columns={columns}
-        actions={actions}
-        loading={loading}
-        searchKeys={['username', 'title', 'channel_id']}
-      />
+      <DataTable data={channels} columns={columns} actions={actions} loading={loading} searchKeys={['username', 'title', 'channel_id']} />
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          resetForm()
-        }}
-        title={selectedChannel ? 'Редактировать канал' : 'Добавить канал'}
-      >
+      <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); resetForm() }} title={selectedChannel ? 'Редактировать канал' : 'Добавить канал'}>
         <div className="space-y-4">
           <div>
             <label className="label">Channel ID *</label>
-            <input
-              type="text"
-              value={formData.channel_id}
-              onChange={(e) => setFormData({ ...formData, channel_id: e.target.value })}
-              className="input"
-              placeholder="-1001234567890"
-              required
-            />
+            <input type="text" value={formData.channel_id} onChange={(e) => setFormData({ ...formData, channel_id: e.target.value })} className="input" placeholder="-1001234567890" required />
           </div>
           <div>
             <label className="label">Username</label>
-            <input
-              type="text"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="input"
-              placeholder="channel_username"
-            />
+            <input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} className="input" placeholder="channel_username" />
           </div>
           <div>
             <label className="label">Название *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="input"
-              placeholder="Название канала"
-              required
-            />
+            <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="input" placeholder="Название канала" required />
           </div>
           <div>
             <label className="label">Описание</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="input"
-              rows={3}
-              placeholder="Описание канала"
-            />
+            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="input" rows={2} />
           </div>
           <div>
             <label className="label">Invite Link</label>
-            <input
-              type="text"
-              value={formData.invite_link}
-              onChange={(e) => setFormData({ ...formData, invite_link: e.target.value })}
-              className="input"
-              placeholder="https://t.me/+ABC123"
-            />
+            <input type="text" value={formData.invite_link} onChange={(e) => setFormData({ ...formData, invite_link: e.target.value })} className="input" placeholder="https://t.me/+ABC123" />
           </div>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="w-4 h-4 rounded border-gray-300"
-            />
+            <input type="checkbox" id="is_active" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} className="w-4 h-4 rounded" />
             <label htmlFor="is_active" className="text-sm">Активен</label>
           </div>
         </div>
-
         <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={() => {
-              setIsModalOpen(false)
-              resetForm()
-            }}
-            className="btn-secondary"
-          >
-            Отмена
-          </button>
-          <button onClick={handleSubmit} className="btn-primary">
-            {selectedChannel ? 'Сохранить' : 'Добавить'}
-          </button>
+          <button onClick={() => { setIsModalOpen(false); resetForm() }} className="btn-secondary">Отмена</button>
+          <button onClick={handleSubmit} className="btn-primary">{selectedChannel ? 'Сохранить' : 'Добавить'}</button>
         </div>
       </Modal>
 
-      <ConfirmDialog
-        isOpen={isDeleteOpen}
-        onClose={() => setIsDeleteOpen(false)}
-        onConfirm={handleDelete}
-        title="Удалить канал"
-        message={`Вы уверены что хотите удалить канал "${selectedChannel?.title}"?`}
-        confirmText="Удалить"
-        danger
-      />
+      <ConfirmDialog isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} onConfirm={handleDelete} title="Удалить канал" message={`Удалить канал "${selectedChannel?.title}"?`} confirmText="Удалить" danger />
     </div>
   )
 }
