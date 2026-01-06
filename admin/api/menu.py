@@ -13,7 +13,7 @@ from admin.schemas.menu import (
 )
 from bot.models import MenuItem
 
-router = APIRouter(prefix="/menu", tags=["Menu"])
+router = APIRouter(tags=["Menu"])
 
 
 # === Response helpers ===
@@ -433,3 +433,4 @@ async def duplicate_menu_item(
     await session.refresh(new_item)
     
     return _build_menu_item_response(new_item, [])
+
