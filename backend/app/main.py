@@ -13,6 +13,11 @@ from .services.subscription_checker import (
     stop_subscription_checker,
     get_subscription_checker
 )
+from .services.bot_manager import (
+    start_bot_manager,
+    stop_bot_manager,
+    get_bot_manager
+)
 
 
 @asynccontextmanager
@@ -42,10 +47,18 @@ async def lifespan(app: FastAPI):
     await start_subscription_checker()
     print("✅ Subscription checker started")
     
+    # Запускаем менеджер ботов (автозапуск активных)
+    await start_bot_manager()
+    print("✅ Bot manager started (active bots auto-started)")
+    
     yield
     
     # Shutdown
     print("🛑 Shutting down...")
+    
+    # Останавливаем все боты
+    await stop_bot_manager()
+    print("✅ All bots stopped")
     
     # Останавливаем проверку подписок
     await stop_subscription_checker()
@@ -86,10 +99,15 @@ def create_app() -> FastAPI:
     @app.get("/", tags=["Health"])
     async def root():
         """Корневой эндпоинт"""
+        # Получаем статус менеджера ботов
+        bot_manager = get_bot_manager()
+        running_count = len(bot_manager.running_bots)
+        
         return {
             "name": "Telegram Bot Constructor API",
             "version": "1.0.0",
-            "status": "running"
+            "status": "running",
+            "running_bots": running_count
         }
     
     # Подключаем API роутеры

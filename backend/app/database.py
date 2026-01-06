@@ -54,7 +54,7 @@ async def get_main_engine():
 
 
 async def get_main_session() -> AsyncSession:
-    """Получить сессию для главной базы данных"""
+    """Получить сессию для главной базы данных (прямой вызов, не dependency)"""
     if "main" not in _session_makers:
         engine = await get_main_engine()
         _session_makers["main"] = async_sessionmaker(
@@ -63,8 +63,7 @@ async def get_main_session() -> AsyncSession:
             expire_on_commit=False
         )
     
-    async with _session_makers["main"]() as session:
-        yield session
+    return _session_makers["main"]()
 
 
 async def get_bot_engine(bot_uuid: str):

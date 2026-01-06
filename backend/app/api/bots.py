@@ -13,6 +13,7 @@ from ..schemas.bot import (
     BotListResponse, BotStatusResponse
 )
 from ..database import init_bot_db, delete_bot_db
+from ..services.bot_manager import get_bot_manager
 from .deps import DbSession, CurrentAdmin
 
 router = APIRouter()
@@ -214,7 +215,10 @@ async def delete_bot(
             detail="Бот не найден"
         )
     
-    # TODO: Остановить процесс если запущен (будет в Этапе 13)
+    # Останавливаем процесс если запущен
+    bot_manager = get_bot_manager()
+    if bot_manager.is_running(bot_uuid):
+        await bot_manager.stop_bot(bot_uuid, db)
     
     # Удаляем папку и БД бота
     try:
@@ -234,7 +238,7 @@ async def delete_bot(
     "/{bot_uuid}/start",
     response_model=BotStatusResponse,
     summary="Запустить бота",
-    description="Запуск процесса бота (заглушка)"
+    description="Запуск процесса бота"
 )
 async def start_bot(
     bot_uuid: Annotated[str, Path(description="UUID бота")],
@@ -242,9 +246,9 @@ async def start_bot(
     current_admin: CurrentAdmin
 ) -> BotStatusResponse:
     """
-    Запустить бота (ЗАГЛУШКА).
+    Запустить бота.
     
-    Полная реализация будет в Этапе 13 (Оркестратор).
+    Запускает процесс бота как subprocess и сохраняет PID в БД.
     """
     result = await db.execute(
         select(Bot).where(Bot.uuid == bot_uuid)
@@ -257,27 +261,24 @@ async def start_bot(
             detail="Бот не найден"
         )
     
-    if bot.is_active:
-        return BotStatusResponse(
-            uuid=bot_uuid,
-            is_active=True,
-            process_pid=bot.process_pid,
-            message="Бот уже запущен"
+    # Используем BotManager для запуска
+    bot_manager = get_bot_manager()
+    start_result = await bot_manager.start_bot(bot_uuid, db)
+    
+    if not start_result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=start_result["message"]
         )
     
-    # TODO: Реальный запуск процесса (Этап 13)
-    # Пока просто меняем статус для демонстрации
-    bot.is_active = True
-    bot.process_pid = 99999  # Заглушка PID
-    
-    await db.commit()
+    # Обновляем данные из БД
     await db.refresh(bot)
     
     return BotStatusResponse(
         uuid=bot_uuid,
         is_active=True,
-        process_pid=bot.process_pid,
-        message="Бот запущен (заглушка — реальный запуск в Этапе 13)"
+        process_pid=start_result.get("pid"),
+        message=start_result["message"]
     )
 
 
@@ -285,7 +286,7 @@ async def start_bot(
     "/{bot_uuid}/stop",
     response_model=BotStatusResponse,
     summary="Остановить бота",
-    description="Остановка процесса бота (заглушка)"
+    description="Остановка процесса бота"
 )
 async def stop_bot(
     bot_uuid: Annotated[str, Path(description="UUID бота")],
@@ -293,9 +294,9 @@ async def stop_bot(
     current_admin: CurrentAdmin
 ) -> BotStatusResponse:
     """
-    Остановить бота (ЗАГЛУШКА).
+    Остановить бота.
     
-    Полная реализация будет в Этапе 13 (Оркестратор).
+    Останавливает процесс бота по PID и обновляет статус в БД.
     """
     result = await db.execute(
         select(Bot).where(Bot.uuid == bot_uuid)
@@ -308,26 +309,24 @@ async def stop_bot(
             detail="Бот не найден"
         )
     
-    if not bot.is_active:
-        return BotStatusResponse(
-            uuid=bot_uuid,
-            is_active=False,
-            process_pid=None,
-            message="Бот уже остановлен"
+    # Используем BotManager для остановки
+    bot_manager = get_bot_manager()
+    stop_result = await bot_manager.stop_bot(bot_uuid, db)
+    
+    if not stop_result["success"] and not stop_result.get("already_stopped"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=stop_result["message"]
         )
     
-    # TODO: Реальная остановка процесса (Этап 13)
-    bot.is_active = False
-    bot.process_pid = None
-    
-    await db.commit()
+    # Обновляем данные из БД
     await db.refresh(bot)
     
     return BotStatusResponse(
         uuid=bot_uuid,
         is_active=False,
         process_pid=None,
-        message="Бот остановлен (заглушка — реальная остановка в Этапе 13)"
+        message=stop_result["message"]
     )
 
 
@@ -354,14 +353,88 @@ async def get_bot_status(
             detail="Бот не найден"
         )
     
-    status_msg = "Бот запущен" if bot.is_active else "Бот остановлен"
+    # Получаем актуальный статус из BotManager
+    bot_manager = get_bot_manager()
+    manager_status = await bot_manager.get_status(bot_uuid)
+    
+    is_running = manager_status["is_running"]
+    pid = manager_status["pid"]
+    uptime = manager_status.get("uptime_seconds")
+    
+    if is_running:
+        status_msg = f"Бот запущен (PID: {pid}, uptime: {uptime}s)"
+    else:
+        status_msg = "Бот остановлен"
     
     return BotStatusResponse(
         uuid=bot_uuid,
-        is_active=bot.is_active,
-        process_pid=bot.process_pid,
+        is_active=is_running,
+        process_pid=pid,
         message=status_msg
     )
+
+
+@router.post(
+    "/{bot_uuid}/restart",
+    response_model=BotStatusResponse,
+    summary="Перезапустить бота",
+    description="Перезапуск процесса бота"
+)
+async def restart_bot(
+    bot_uuid: Annotated[str, Path(description="UUID бота")],
+    db: DbSession,
+    current_admin: CurrentAdmin
+) -> BotStatusResponse:
+    """
+    Перезапустить бота.
+    
+    Останавливает и затем запускает процесс бота.
+    """
+    result = await db.execute(
+        select(Bot).where(Bot.uuid == bot_uuid)
+    )
+    bot = result.scalar_one_or_none()
+    
+    if bot is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Бот не найден"
+        )
+    
+    # Используем BotManager для перезапуска
+    bot_manager = get_bot_manager()
+    restart_result = await bot_manager.restart_bot(bot_uuid, db)
+    
+    if not restart_result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=restart_result["message"]
+        )
+    
+    return BotStatusResponse(
+        uuid=bot_uuid,
+        is_active=True,
+        process_pid=restart_result.get("pid"),
+        message=restart_result["message"]
+    )
+
+
+@router.get(
+    "/manager/status",
+    summary="Статус менеджера ботов",
+    description="Получить статус всех запущенных ботов"
+)
+async def get_bot_manager_status(
+    current_admin: CurrentAdmin
+) -> dict:
+    """Получить статус всех ботов от BotManager"""
+    bot_manager = get_bot_manager()
+    all_status = bot_manager.get_all_status()
+    
+    return {
+        "running_count": len(all_status),
+        "bots": all_status
+    }
 
 
 @router.post(
