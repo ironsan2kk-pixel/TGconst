@@ -26,8 +26,11 @@ export default function Users() {
         usersAPI.getAll(),
         tariffsAPI.getAll()
       ])
-      setUsers(usersRes.data)
-      setTariffs(tariffsRes.data)
+      // Handle paginated response
+      const usersData = usersRes.data.items || usersRes.data
+      const tariffsData = tariffsRes.data.items || tariffsRes.data
+      setUsers(Array.isArray(usersData) ? usersData : [])
+      setTariffs(Array.isArray(tariffsData) ? tariffsData : [])
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
@@ -51,7 +54,11 @@ export default function Users() {
 
   const handleRevoke = async () => {
     try {
-      await usersAPI.revokeAccess(selectedUser.id)
+      // Need to get active subscription tariff_id
+      const tariffId = selectedUser.active_tariff_id || grantData.tariff_id
+      if (tariffId) {
+        await usersAPI.revokeAccess(selectedUser.id, tariffId)
+      }
       setIsRevokeOpen(false)
       loadData()
     } catch (error) {
@@ -94,11 +101,11 @@ export default function Users() {
       render: (value) => value === 'ru' ? '🇷🇺' : '🇬🇧'
     },
     { 
-      key: 'has_subscription', 
+      key: 'active_subscriptions_count', 
       label: 'Подписка',
       render: (value) => (
-        <span className={value ? 'badge-green' : 'badge-yellow'}>
-          {value ? 'Активна' : 'Нет'}
+        <span className={value > 0 ? 'badge-green' : 'badge-yellow'}>
+          {value > 0 ? 'Активна' : 'Нет'}
         </span>
       )
     },
@@ -137,7 +144,7 @@ export default function Users() {
         setSelectedUser(row)
         setIsRevokeOpen(true)
       },
-      show: (row) => row.has_subscription
+      show: (row) => row.active_subscriptions_count > 0
     },
     {
       icon: Ban,
@@ -188,140 +195,54 @@ export default function Users() {
       />
 
       {/* View Modal */}
-      <Modal
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-        title="Информация о пользователе"
-      >
+      <Modal isOpen={isViewOpen} onClose={() => setIsViewOpen(false)} title="Информация о пользователе">
         {selectedUser && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-500">ID:</span>
-                <span className="ml-2 font-medium">{selectedUser.id}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Telegram ID:</span>
-                <span className="ml-2 font-medium">{selectedUser.telegram_id}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Username:</span>
-                <span className="ml-2 font-medium">{selectedUser.username || '—'}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Имя:</span>
-                <span className="ml-2 font-medium">
-                  {selectedUser.first_name} {selectedUser.last_name}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Язык:</span>
-                <span className="ml-2">{selectedUser.language === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English'}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Статус:</span>
-                <span className="ml-2">
-                  {selectedUser.is_banned ? (
-                    <span className="badge-red">Забанен</span>
-                  ) : (
-                    <span className="badge-green">Активен</span>
-                  )}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Регистрация:</span>
-                <span className="ml-2">{formatDate(selectedUser.created_at)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Последняя активность:</span>
-                <span className="ml-2">{formatDate(selectedUser.last_activity)}</span>
-              </div>
+              <div><span className="text-gray-500">ID:</span> <span className="ml-2 font-medium">{selectedUser.id}</span></div>
+              <div><span className="text-gray-500">Telegram ID:</span> <span className="ml-2 font-medium">{selectedUser.telegram_id}</span></div>
+              <div><span className="text-gray-500">Username:</span> <span className="ml-2 font-medium">{selectedUser.username || '—'}</span></div>
+              <div><span className="text-gray-500">Имя:</span> <span className="ml-2 font-medium">{selectedUser.first_name} {selectedUser.last_name}</span></div>
+              <div><span className="text-gray-500">Язык:</span> <span className="ml-2">{selectedUser.language === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English'}</span></div>
+              <div><span className="text-gray-500">Регистрация:</span> <span className="ml-2">{formatDate(selectedUser.created_at)}</span></div>
             </div>
-            {selectedUser.is_banned && selectedUser.ban_reason && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <span className="text-sm text-red-600 dark:text-red-400">
-                  Причина бана: {selectedUser.ban_reason}
-                </span>
-              </div>
-            )}
           </div>
         )}
       </Modal>
 
       {/* Grant Access Modal */}
-      <Modal
-        isOpen={isGrantOpen}
-        onClose={() => setIsGrantOpen(false)}
-        title="Выдать доступ"
-      >
+      <Modal isOpen={isGrantOpen} onClose={() => setIsGrantOpen(false)} title="Выдать доступ">
         <div className="space-y-4">
           <div>
             <label className="label">Тариф</label>
-            <select
-              value={grantData.tariff_id}
-              onChange={(e) => setGrantData({ ...grantData, tariff_id: e.target.value })}
-              className="input"
-            >
+            <select value={grantData.tariff_id} onChange={(e) => setGrantData({ ...grantData, tariff_id: e.target.value })} className="input">
               <option value="">Выберите тариф</option>
-              {tariffs.map(t => (
-                <option key={t.id} value={t.id}>{t.name_ru} (${t.price})</option>
-              ))}
+              {tariffs.map(t => (<option key={t.id} value={t.id}>{t.name_ru} (${t.price})</option>))}
             </select>
           </div>
           <div>
             <label className="label">Срок (дней)</label>
-            <input
-              type="number"
-              value={grantData.days}
-              onChange={(e) => setGrantData({ ...grantData, days: e.target.value })}
-              className="input"
-            />
+            <input type="number" value={grantData.days} onChange={(e) => setGrantData({ ...grantData, days: e.target.value })} className="input" />
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={() => setIsGrantOpen(false)} className="btn-secondary">Отмена</button>
-          <button 
-            onClick={handleGrant} 
-            className="btn-primary"
-            disabled={!grantData.tariff_id}
-          >
-            Выдать
-          </button>
+          <button onClick={handleGrant} className="btn-primary" disabled={!grantData.tariff_id}>Выдать</button>
         </div>
       </Modal>
 
-      {/* Revoke Access Confirm */}
-      <ConfirmDialog
-        isOpen={isRevokeOpen}
-        onClose={() => setIsRevokeOpen(false)}
-        onConfirm={handleRevoke}
-        title="Забрать доступ"
-        message={`Забрать доступ у пользователя ${selectedUser?.username || selectedUser?.first_name}?`}
-        confirmText="Забрать"
-        danger
-      />
+      {/* Revoke Confirm */}
+      <ConfirmDialog isOpen={isRevokeOpen} onClose={() => setIsRevokeOpen(false)} onConfirm={handleRevoke} title="Забрать доступ" message={`Забрать доступ у ${selectedUser?.username || selectedUser?.first_name}?`} confirmText="Забрать" danger />
 
       {/* Ban Modal */}
-      <Modal
-        isOpen={isBanOpen}
-        onClose={() => setIsBanOpen(false)}
-        title="Забанить пользователя"
-      >
+      <Modal isOpen={isBanOpen} onClose={() => setIsBanOpen(false)} title="Забанить пользователя">
         <div>
           <label className="label">Причина бана</label>
-          <textarea
-            value={banReason}
-            onChange={(e) => setBanReason(e.target.value)}
-            className="input"
-            rows={3}
-            placeholder="Укажите причину..."
-          />
+          <textarea value={banReason} onChange={(e) => setBanReason(e.target.value)} className="input" rows={3} placeholder="Укажите причину..." />
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button onClick={() => setIsBanOpen(false)} className="btn-secondary">Отмена</button>
-          <button onClick={handleBan} className="btn-primary bg-red-600 hover:bg-red-700">
-            Забанить
-          </button>
+          <button onClick={handleBan} className="btn-primary bg-red-600 hover:bg-red-700">Забанить</button>
         </div>
       </Modal>
     </div>
