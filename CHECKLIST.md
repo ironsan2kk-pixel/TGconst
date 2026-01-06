@@ -29,7 +29,7 @@
 | 4 | Backend API — CRUD ботов | ✅ |
 | 5 | Backend API — Каналы и тарифы | ✅ |
 | 6 | Backend API — Промокоды | ✅ |
-| 7 | Backend API — Рассылки | ⬜ |
+| 7 | Backend API — Рассылки | ✅ |
 | 8 | Шаблон бота — Ядро | ⬜ |
 | 9 | Шаблон бота — CryptoBot оплата | ⬜ |
 | 10 | Userbot — Автодобавление | ⬜ |
@@ -239,20 +239,20 @@ ls data/bots/abc-123/
 ---
 
 ## ЭТАП 7: Backend API — Рассылки
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готов
 
 ### Задачи:
-- [ ] backend/app/schemas/broadcast.py
-- [ ] backend/app/api/broadcasts.py
-- [ ] backend/app/services/__init__.py
-- [ ] backend/app/services/broadcast_worker.py (фоновая задача)
+- [x] backend/app/schemas/broadcast.py
+- [x] backend/app/api/broadcasts.py
+- [x] backend/app/services/__init__.py
+- [x] backend/app/services/broadcast_worker.py (фоновая задача)
 
 ### Эндпоинты:
-- [ ] GET /api/bots/{uuid}/broadcasts
-- [ ] POST /api/bots/{uuid}/broadcasts
-- [ ] GET /api/bots/{uuid}/broadcasts/{id}
-- [ ] POST /api/bots/{uuid}/broadcasts/{id}/start
-- [ ] POST /api/bots/{uuid}/broadcasts/{id}/cancel
+- [x] GET /api/bots/{uuid}/broadcasts
+- [x] POST /api/bots/{uuid}/broadcasts
+- [x] GET /api/bots/{uuid}/broadcasts/{id}
+- [x] POST /api/bots/{uuid}/broadcasts/{id}/start
+- [x] POST /api/bots/{uuid}/broadcasts/{id}/cancel
 
 ---
 
