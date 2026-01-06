@@ -2,31 +2,57 @@
 
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings."""
     
-    # Server
-    host: str = "0.0.0.0"
-    port: int = 8000
-    debug: bool = False
-    secret_key: str = "change-this-in-production"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"  # Игнорировать лишние поля
+    )
+    
+    # Telegram Bot
+    bot_token: str = ""
+    
+    # CryptoBot
+    cryptobot_token: str = ""
+    cryptobot_webhook_secret: str = ""
+    
+    # Userbot
+    userbot_api_id: str = ""
+    userbot_api_hash: str = ""
+    userbot_phone: str = ""
+    userbot_session_string: str = ""
+    
+    # Admin
+    admin_ids: str = ""  # Comma-separated telegram IDs
     
     # Database
     database_path: str = "./data/bot.db"
     backup_dir: str = "./data/backups"
     
-    # Admin
-    admin_ids: str = ""  # Comma-separated telegram IDs
-    
-    # Webhook
+    # Server
+    backend_host: str = "0.0.0.0"
+    backend_port: int = 8000
     webhook_base_url: str = ""
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # App
+    debug: bool = False
+    secret_key: str = "change-this-in-production"
+    default_language: str = "ru"
+    
+    @property
+    def host(self) -> str:
+        """Alias for backend_host."""
+        return self.backend_host
+    
+    @property
+    def port(self) -> int:
+        """Alias for backend_port."""
+        return self.backend_port
     
     @property
     def database_url(self) -> str:
