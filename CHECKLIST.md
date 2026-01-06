@@ -27,8 +27,8 @@
 | 2 | База данных — Модели | ✅ Готов |
 | 3 | Backend API — Auth | ✅ |
 | 4 | Backend API — CRUD ботов | ✅ |
-| 5 | Backend API — Каналы и тарифы | ⬜ |
-| 6 | Backend API — Промокоды | ⬜ |
+| 5 | Backend API — Каналы и тарифы | ✅ |
+| 6 | Backend API — Промокоды | ✅ |
 | 7 | Backend API — Рассылки | ⬜ |
 | 8 | Шаблон бота — Ядро | ⬜ |
 | 9 | Шаблон бота — CryptoBot оплата | ⬜ |
@@ -180,43 +180,61 @@ ls data/bots/abc-123/
 ---
 
 ## ЭТАП 5: Backend API — Каналы и тарифы
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готов
 
 ### Задачи:
-- [ ] backend/app/schemas/channel.py
-- [ ] backend/app/schemas/tariff.py
-- [ ] backend/app/api/channels.py (работа с bot.db)
-- [ ] backend/app/api/tariffs.py
+- [x] backend/app/schemas/channel.py
+- [x] backend/app/schemas/tariff.py
+- [x] backend/app/api/channels.py (работа с bot.db)
+- [x] backend/app/api/tariffs.py
 
 ### Эндпоинты каналов:
-- [ ] GET /api/bots/{uuid}/channels
-- [ ] POST /api/bots/{uuid}/channels
-- [ ] GET /api/bots/{uuid}/channels/{id}
-- [ ] PUT /api/bots/{uuid}/channels/{id}
-- [ ] DELETE /api/bots/{uuid}/channels/{id}
+- [x] GET /api/bots/{uuid}/channels
+- [x] POST /api/bots/{uuid}/channels
+- [x] GET /api/bots/{uuid}/channels/{id}
+- [x] PUT /api/bots/{uuid}/channels/{id}
+- [x] DELETE /api/bots/{uuid}/channels/{id}
 
 ### Эндпоинты тарифов:
-- [ ] GET /api/bots/{uuid}/channels/{channel_id}/tariffs
-- [ ] POST /api/bots/{uuid}/channels/{channel_id}/tariffs
-- [ ] PUT /api/bots/{uuid}/tariffs/{id}
-- [ ] DELETE /api/bots/{uuid}/tariffs/{id}
+- [x] GET /api/bots/{uuid}/channels/{channel_id}/tariffs
+- [x] POST /api/bots/{uuid}/channels/{channel_id}/tariffs
+- [x] PUT /api/bots/{uuid}/tariffs/{id}
+- [x] DELETE /api/bots/{uuid}/tariffs/{id}
 
 ---
 
 ## ЭТАП 6: Backend API — Промокоды
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готов
 
 ### Задачи:
-- [ ] backend/app/schemas/promocode.py
-- [ ] backend/app/api/promocodes.py
-- [ ] Валидация: срок, лимит, активность
+- [x] backend/app/schemas/promocode.py
+- [x] backend/app/api/promocodes.py
+- [x] Валидация: срок, лимит, активность
 
 ### Эндпоинты:
-- [ ] GET /api/bots/{uuid}/promocodes
-- [ ] POST /api/bots/{uuid}/promocodes
-- [ ] PUT /api/bots/{uuid}/promocodes/{id}
-- [ ] DELETE /api/bots/{uuid}/promocodes/{id}
-- [ ] POST /api/bots/{uuid}/promocodes/validate — проверить код
+- [x] GET /api/bots/{uuid}/promocodes — список промокодов
+- [x] POST /api/bots/{uuid}/promocodes — создать промокод
+- [x] GET /api/bots/{uuid}/promocodes/{id} — получить промокод
+- [x] PUT /api/bots/{uuid}/promocodes/{id} — обновить
+- [x] DELETE /api/bots/{uuid}/promocodes/{id} — удалить
+- [x] POST /api/bots/{uuid}/promocodes/{id}/toggle — переключить статус
+- [x] POST /api/bots/{uuid}/promocodes/{id}/reset — сбросить счётчик
+- [x] POST /api/bots/{uuid}/promocodes/validate — проверить код
+- [x] POST /api/bots/{uuid}/promocodes/check/{code} — быстрая проверка
+- [x] GET /api/bots/{uuid}/promocodes/stats/summary — статистика
+
+### Схемы:
+- PromocodeCreate, PromocodeUpdate — создание/обновление
+- PromocodeResponse, PromocodeListResponse — ответы
+- PromocodeValidateRequest, PromocodeValidateResponse — валидация
+- PromocodeClearLimitRequest — сброс лимита
+
+### Валидация:
+- Код приводится к uppercase
+- Проверка: либо discount_percent, либо discount_amount (не оба)
+- Проверка valid_from < valid_until
+- Метод is_valid() проверяет: активность, сроки, лимит использований
+- Метод calculate_discount() рассчитывает скидку
 
 ---
 
