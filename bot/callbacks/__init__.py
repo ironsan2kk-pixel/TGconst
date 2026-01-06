@@ -4,7 +4,7 @@ Callback-обработчики бота.
 
 from aiogram import Router
 
-from bot.callbacks import language, tariff, payment
+from bot.callbacks import language, tariff, payment, admin
 
 
 def setup_callbacks() -> Router:
@@ -14,5 +14,6 @@ def setup_callbacks() -> Router:
     router.include_router(language.router)
     router.include_router(tariff.router)
     router.include_router(payment.router)
+    router.include_router(admin.router)
     
     return router
