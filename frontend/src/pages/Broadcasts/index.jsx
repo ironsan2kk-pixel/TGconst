@@ -29,7 +29,7 @@ export default function Broadcasts() {
     setLoading(true)
     try {
       const response = await broadcastsAPI.getAll()
-      setBroadcasts(response.data)
+      const data = response.data.items || response.data; setBroadcasts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading broadcasts:', error)
     } finally {
