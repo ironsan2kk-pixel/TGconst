@@ -8,6 +8,8 @@ from bot.keyboards.inline import (
     tariffs_keyboard,
     tariff_detail_keyboard,
     back_to_menu_keyboard,
+    payment_keyboard,
+    support_keyboard,
 )
 
 
@@ -17,4 +19,6 @@ __all__ = [
     'tariffs_keyboard',
     'tariff_detail_keyboard',
     'back_to_menu_keyboard',
+    'payment_keyboard',
+    'support_keyboard',
 ]
