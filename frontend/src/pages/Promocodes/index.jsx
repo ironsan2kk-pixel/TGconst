@@ -1,65 +1,97 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Copy } from 'lucide-react'
+import { Plus, Edit, Trash2, Copy } from 'lucide-react'
 import { DataTable, Modal, ConfirmDialog } from '../../components'
-
-// Mock data
-const mockPromocodes = [
-  { id: 1, code: 'WELCOME10', discount_percent: 10, discount_amount: null, max_uses: 100, used_count: 45, valid_until: '2024-12-31', is_active: true },
-  { id: 2, code: 'VIP50', discount_percent: 50, discount_amount: null, max_uses: 10, used_count: 10, valid_until: '2024-06-30', is_active: false },
-  { id: 3, code: 'FLAT5', discount_percent: null, discount_amount: 5, max_uses: null, used_count: 123, valid_until: null, is_active: true },
-]
+import { promocodesAPI } from '../../api/client'
 
 export default function Promocodes() {
-  const [promocodes, setPromocodes] = useState(mockPromocodes)
-  const [loading, setLoading] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, promo: null })
-  const [editingPromo, setEditingPromo] = useState(null)
-  const [form, setForm] = useState({
+  const [promocodes, setPromocodes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [selectedPromo, setSelectedPromo] = useState(null)
+  const [formData, setFormData] = useState({
     code: '',
-    discount_type: 'percent',
     discount_percent: '',
     discount_amount: '',
     max_uses: '',
     valid_until: '',
+    tariff_id: '',
     is_active: true
   })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  useEffect(() => {
+    loadPromocodes()
+  }, [])
+
+  const loadPromocodes = async () => {
+    setLoading(true)
+    try {
+      const response = await promocodesAPI.getAll()
+      setPromocodes(response.data)
+    } catch (error) {
+      console.error('Error loading promocodes:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async () => {
     try {
       const data = {
-        ...form,
-        code: form.code.toUpperCase(),
-        discount_percent: form.discount_type === 'percent' ? parseInt(form.discount_percent) : null,
-        discount_amount: form.discount_type === 'amount' ? parseFloat(form.discount_amount) : null,
-        max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-        valid_until: form.valid_until || null
+        ...formData,
+        discount_percent: formData.discount_percent ? parseInt(formData.discount_percent) : null,
+        discount_amount: formData.discount_amount ? parseFloat(formData.discount_amount) : null,
+        max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
+        tariff_id: formData.tariff_id ? parseInt(formData.tariff_id) : null
       }
-      
-      if (editingPromo) {
-        setPromocodes(promocodes.map(p => p.id === editingPromo.id ? { ...p, ...data } : p))
+      if (selectedPromo) {
+        await promocodesAPI.update(selectedPromo.id, data)
       } else {
-        const newPromo = { id: Date.now(), ...data, used_count: 0 }
-        setPromocodes([...promocodes, newPromo])
+        await promocodesAPI.create(data)
       }
-      closeModal()
+      setIsModalOpen(false)
+      resetForm()
+      loadPromocodes()
     } catch (error) {
-      console.error('Failed to save:', error)
+      console.error('Error saving promocode:', error)
     }
   }
 
   const handleDelete = async () => {
     try {
-      setPromocodes(promocodes.filter(p => p.id !== deleteDialog.promo.id))
-      setDeleteDialog({ open: false, promo: null })
+      await promocodesAPI.delete(selectedPromo.id)
+      setIsDeleteOpen(false)
+      loadPromocodes()
     } catch (error) {
-      console.error('Failed to delete:', error)
+      console.error('Error deleting promocode:', error)
     }
   }
 
-  const copyCode = (code) => {
-    navigator.clipboard.writeText(code)
+  const openEditModal = (promo) => {
+    setSelectedPromo(promo)
+    setFormData({
+      code: promo.code,
+      discount_percent: promo.discount_percent?.toString() || '',
+      discount_amount: promo.discount_amount?.toString() || '',
+      max_uses: promo.max_uses?.toString() || '',
+      valid_until: promo.valid_until ? promo.valid_until.slice(0, 16) : '',
+      tariff_id: promo.tariff_id?.toString() || '',
+      is_active: promo.is_active
+    })
+    setIsModalOpen(true)
+  }
+
+  const resetForm = () => {
+    setSelectedPromo(null)
+    setFormData({
+      code: '',
+      discount_percent: '',
+      discount_amount: '',
+      max_uses: '',
+      valid_until: '',
+      tariff_id: '',
+      is_active: true
+    })
   }
 
   const generateCode = () => {
@@ -68,80 +100,80 @@ export default function Promocodes() {
     for (let i = 0; i < 8; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length))
     }
-    setForm({ ...form, code })
+    setFormData({ ...formData, code })
   }
 
-  const openModal = (promo = null) => {
-    if (promo) {
-      setEditingPromo(promo)
-      setForm({
-        code: promo.code,
-        discount_type: promo.discount_percent ? 'percent' : 'amount',
-        discount_percent: promo.discount_percent?.toString() || '',
-        discount_amount: promo.discount_amount?.toString() || '',
-        max_uses: promo.max_uses?.toString() || '',
-        valid_until: promo.valid_until || '',
-        is_active: promo.is_active
-      })
-    } else {
-      setEditingPromo(null)
-      setForm({
-        code: '',
-        discount_type: 'percent',
-        discount_percent: '',
-        discount_amount: '',
-        max_uses: '',
-        valid_until: '',
-        is_active: true
-      })
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code)
+  }
+
+  const getStatusBadge = (promo) => {
+    if (!promo.is_active) return <span className="badge-red">Отключен</span>
+    if (promo.valid_until && new Date(promo.valid_until) < new Date()) {
+      return <span className="badge-red">Истёк</span>
     }
-    setModalOpen(true)
-  }
-
-  const closeModal = () => {
-    setModalOpen(false)
-    setEditingPromo(null)
+    if (promo.max_uses && promo.used_count >= promo.max_uses) {
+      return <span className="badge-yellow">Исчерпан</span>
+    }
+    return <span className="badge-green">Активен</span>
   }
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', sortable: true },
     { 
       key: 'code', 
       label: 'Код',
-      render: (val) => (
-        <code className="font-bold text-primary-600 dark:text-primary-400">{val}</code>
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">
+            {value}
+          </code>
+          <button onClick={() => copyCode(value)} className="text-gray-400 hover:text-gray-600">
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
       )
     },
     { 
-      key: 'discount_percent', 
+      key: 'discount', 
       label: 'Скидка',
-      render: (val, row) => row.discount_percent 
-        ? `${row.discount_percent}%` 
-        : `$${row.discount_amount}`
+      render: (_, row) => {
+        if (row.discount_percent) return `${row.discount_percent}%`
+        if (row.discount_amount) return `$${row.discount_amount}`
+        return '—'
+      }
     },
     { 
-      key: 'used_count', 
+      key: 'usage', 
       label: 'Использований',
-      render: (val, row) => row.max_uses 
-        ? `${val} / ${row.max_uses}` 
-        : `${val} / ∞`
+      render: (_, row) => `${row.used_count || 0}${row.max_uses ? ` / ${row.max_uses}` : ''}`
     },
     { 
       key: 'valid_until', 
       label: 'Действует до',
-      render: (val) => val || '♾️ Бессрочно'
+      render: (value) => value ? new Date(value).toLocaleDateString('ru-RU') : 'Бессрочно'
     },
     { 
-      key: 'is_active', 
+      key: 'status', 
       label: 'Статус',
-      render: (val, row) => {
-        const isExpired = row.valid_until && new Date(row.valid_until) < new Date()
-        const isUsedUp = row.max_uses && row.used_count >= row.max_uses
-        if (!val) return <span className="badge badge-danger">Неактивен</span>
-        if (isExpired) return <span className="badge badge-warning">Истёк</span>
-        if (isUsedUp) return <span className="badge badge-warning">Исчерпан</span>
-        return <span className="badge badge-success">Активен</span>
-      }
+      render: (_, row) => getStatusBadge(row)
+    }
+  ]
+
+  const actions = [
+    {
+      icon: Edit,
+      label: 'Редактировать',
+      onClick: openEditModal
+    },
+    {
+      icon: Trash2,
+      label: 'Удалить',
+      onClick: (row) => {
+        setSelectedPromo(row)
+        setIsDeleteOpen(true)
+      },
+      className: 'text-red-600 hover:text-red-700'
     }
   ]
 
@@ -149,177 +181,135 @@ export default function Promocodes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Промокоды</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Активных: {promocodes.filter(p => p.is_active).length}
+          <h1 className="text-2xl font-bold">Промокоды</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Всего: {promocodes.length}
           </p>
         </div>
-        <button onClick={() => openModal()} className="btn btn-primary flex items-center gap-2">
+        <button
+          onClick={() => {
+            resetForm()
+            setIsModalOpen(true)
+          }}
+          className="btn-primary flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
           Добавить промокод
         </button>
       </div>
 
       <DataTable
-        columns={columns}
         data={promocodes}
-        searchable={true}
+        columns={columns}
+        actions={actions}
+        loading={loading}
         searchKeys={['code']}
-        actions={(row) => (
-          <>
-            <button
-              onClick={() => copyCode(row.code)}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
-              title="Копировать"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => openModal(row)}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setDeleteDialog({ open: true, promo: row })}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </>
-        )}
       />
 
-      {/* Modal */}
       <Modal
-        isOpen={modalOpen}
-        onClose={closeModal}
-        title={editingPromo ? 'Редактировать промокод' : 'Добавить промокод'}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          resetForm()
+        }}
+        title={selectedPromo ? 'Редактировать промокод' : 'Добавить промокод'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div>
-            <label className="label">Код</label>
+            <label className="label">Код *</label>
             <div className="flex gap-2">
               <input
                 type="text"
-                value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                placeholder="SAVE10"
-                className="input flex-1"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                className="input flex-1 font-mono"
+                placeholder="PROMO2024"
                 required
               />
-              <button type="button" onClick={generateCode} className="btn btn-secondary">
-                Сгенерировать
+              <button onClick={generateCode} type="button" className="btn-secondary">
+                Генерировать
               </button>
             </div>
           </div>
 
-          <div>
-            <label className="label">Тип скидки</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="discount_type"
-                  value="percent"
-                  checked={form.discount_type === 'percent'}
-                  onChange={(e) => setForm({ ...form, discount_type: e.target.value })}
-                />
-                <span>Процент</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="discount_type"
-                  value="amount"
-                  checked={form.discount_type === 'amount'}
-                  onChange={(e) => setForm({ ...form, discount_type: e.target.value })}
-                />
-                <span>Фиксированная сумма</span>
-              </label>
-            </div>
-          </div>
-
-          {form.discount_type === 'percent' ? (
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Скидка (%)</label>
+              <label className="label">Скидка %</label>
               <input
                 type="number"
-                min="1"
+                min="0"
                 max="100"
-                value={form.discount_percent}
-                onChange={(e) => setForm({ ...form, discount_percent: e.target.value })}
-                placeholder="10"
+                value={formData.discount_percent}
+                onChange={(e) => setFormData({ ...formData, discount_percent: e.target.value, discount_amount: '' })}
                 className="input"
-                required
+                placeholder="20"
               />
             </div>
-          ) : (
             <div>
-              <label className="label">Скидка (USDT)</label>
+              <label className="label">Или фикс. сумма $</label>
               <input
                 type="number"
                 step="0.01"
-                min="0"
-                value={form.discount_amount}
-                onChange={(e) => setForm({ ...form, discount_amount: e.target.value })}
-                placeholder="5.00"
+                value={formData.discount_amount}
+                onChange={(e) => setFormData({ ...formData, discount_amount: e.target.value, discount_percent: '' })}
                 className="input"
-                required
+                placeholder="5.00"
               />
             </div>
-          )}
-
-          <div>
-            <label className="label">Лимит использований</label>
-            <input
-              type="number"
-              min="1"
-              value={form.max_uses}
-              onChange={(e) => setForm({ ...form, max_uses: e.target.value })}
-              placeholder="Без лимита"
-              className="input"
-            />
           </div>
 
-          <div>
-            <label className="label">Действует до</label>
-            <input
-              type="date"
-              value={form.valid_until}
-              onChange={(e) => setForm({ ...form, valid_until: e.target.value })}
-              className="input"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Лимит использований</label>
+              <input
+                type="number"
+                value={formData.max_uses}
+                onChange={(e) => setFormData({ ...formData, max_uses: e.target.value })}
+                className="input"
+                placeholder="Без лимита"
+              />
+            </div>
+            <div>
+              <label className="label">Действует до</label>
+              <input
+                type="datetime-local"
+                value={formData.valid_until}
+                onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                className="input"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
-              id="is_active"
-              checked={form.is_active}
-              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              id="promo_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               className="w-4 h-4 rounded"
             />
-            <label htmlFor="is_active" className="text-sm">Активен</label>
+            <label htmlFor="promo_active" className="text-sm">Активен</label>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={closeModal} className="btn btn-secondary">
-              Отмена
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {editingPromo ? 'Сохранить' : 'Добавить'}
-            </button>
-          </div>
-        </form>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => { setIsModalOpen(false); resetForm() }} className="btn-secondary">
+            Отмена
+          </button>
+          <button onClick={handleSubmit} className="btn-primary" disabled={!formData.code}>
+            {selectedPromo ? 'Сохранить' : 'Добавить'}
+          </button>
+        </div>
       </Modal>
 
       <ConfirmDialog
-        isOpen={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, promo: null })}
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
         onConfirm={handleDelete}
         title="Удалить промокод"
-        message={`Удалить промокод "${deleteDialog.promo?.code}"?`}
+        message={`Удалить промокод "${selectedPromo?.code}"?`}
+        confirmText="Удалить"
+        danger
       />
     </div>
   )
