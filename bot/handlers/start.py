@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from bot.models import User, Subscription, Tariff, MenuItem
-from bot.keyboards import language_keyboard, main_menu_keyboard, dynamic_menu_keyboard
+from bot.keyboards import language_keyboard, main_menu_keyboard, dynamic_menu_keyboard, main_reply_keyboard
 from bot.locales import get_text
 
 router = Router()
@@ -70,7 +70,11 @@ async def show_main_menu(
     else:
         keyboard = main_menu_keyboard(lang, has_subscription)
     
-    await message.answer(_('menu.title'), reply_markup=keyboard)
+    # Отправляем с Reply клавиатурой
+    await message.answer(
+        _('menu.title'),
+        reply_markup=main_reply_keyboard(lang)
+    )
 
 
 @router.message(CommandStart(deep_link=True))
@@ -119,8 +123,10 @@ async def cmd_start(
         )
     else:
         name = user.first_name or 'друг'
-        await message.answer(_('welcome_back', name=name))
-        await show_main_menu(message, session, user, lang)
+        await message.answer(
+            _('welcome_back', name=name),
+            reply_markup=main_reply_keyboard(lang)
+        )
 
 
 @router.message(F.text == '/menu')
@@ -132,4 +138,7 @@ async def cmd_menu(
     _: callable,
 ):
     """Команда /menu."""
-    await show_main_menu(message, session, user, lang)
+    await message.answer(
+        _('menu.title'),
+        reply_markup=main_reply_keyboard(lang)
+    )
