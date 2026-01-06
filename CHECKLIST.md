@@ -30,7 +30,7 @@
 | 5 | Backend API — Каналы и тарифы | ✅ |
 | 6 | Backend API — Промокоды | ✅ |
 | 7 | Backend API — Рассылки | ✅ |
-| 8 | Шаблон бота — Ядро | ⬜ |
+| 8 | Шаблон бота — Ядро | ✅ |
 | 9 | Шаблон бота — CryptoBot оплата | ⬜ |
 | 10 | Userbot — Автодобавление | ⬜ |
 | 11 | Подписки — Проверка и автокик | ⬜ |
@@ -257,34 +257,47 @@ ls data/bots/abc-123/
 ---
 
 ## ЭТАП 8: Шаблон бота — Ядро
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готов
 
 ### Задачи:
-- [ ] backend/bot_template/__init__.py
-- [ ] backend/bot_template/run.py (точка входа: `python run.py --bot-uuid=xxx`)
-- [ ] backend/bot_template/loader.py (Bot, Dispatcher)
-- [ ] backend/bot_template/config.py (загрузка конфига из main.db)
-- [ ] backend/bot_template/database.py (подключение к bot.db)
-- [ ] backend/bot_template/handlers/__init__.py
-- [ ] backend/bot_template/handlers/start.py
-- [ ] backend/bot_template/handlers/menu.py
-- [ ] backend/bot_template/handlers/channels.py
-- [ ] backend/bot_template/handlers/tariffs.py
-- [ ] backend/bot_template/keyboards/__init__.py
-- [ ] backend/bot_template/keyboards/inline.py
-- [ ] backend/bot_template/keyboards/reply.py
+- [x] backend/bot_template/__init__.py
+- [x] backend/bot_template/run.py (точка входа: `python run.py --bot-uuid=xxx`)
+- [x] backend/bot_template/loader.py (Bot, Dispatcher)
+- [x] backend/bot_template/config.py (загрузка конфига из main.db)
+- [x] backend/bot_template/database.py (подключение к bot.db)
+- [x] backend/bot_template/handlers/__init__.py
+- [x] backend/bot_template/handlers/start.py
+- [x] backend/bot_template/handlers/menu.py
+- [x] backend/bot_template/handlers/channels.py
+- [x] backend/bot_template/handlers/tariffs.py
+- [x] backend/bot_template/keyboards/__init__.py
+- [x] backend/bot_template/keyboards/inline.py
+- [x] backend/bot_template/keyboards/reply.py
+- [x] backend/bot_template/callbacks/__init__.py
 
 ### Функционал:
-- [ ] /start → приветствие + меню
-- [ ] Кнопка "Каналы" → список каналов
-- [ ] Выбор канала → тарифы
-- [ ] Выбор тарифа → кнопка "Оплатить" (заглушка)
+- [x] /start → приветствие + меню
+- [x] Кнопка "Каналы" → список каналов
+- [x] Выбор канала → тарифы
+- [x] Выбор тарифа → кнопка "Оплатить" (заглушка)
+- [x] "Мои подписки" → список активных подписок
+- [x] "Поддержка" → ссылка из конфига
+- [x] "Промокод" → информация о промокодах
 
 ### Проверка:
 ```bash
 python backend/bot_template/run.py --bot-uuid=abc-123
 # Бот запускается, /start работает
 ```
+
+### Тесты пройдены:
+- ✅ Синтаксис всех файлов корректен
+- ✅ Все импорты работают
+- ✅ Загрузка конфигурации из main.db
+- ✅ Инициализация БД бота
+- ✅ CRUD операции с users, channels, tariffs
+- ✅ Reply и Inline клавиатуры генерируются
+- ✅ Бот запускается (хендлеры регистрируются)
 
 ---
 
