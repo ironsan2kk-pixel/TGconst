@@ -2,7 +2,18 @@ import { useState, useEffect } from 'react'
 
 const EMOJI_LIST = ['📺', '💳', '🎁', '❓', '📚', '📢', '🌐', '💬', '⚙️', '📖', '🎥', '📝', '🔗', '📁', '⭐', '🏆', '🎯', '💡', '🔥', '💎']
 
-export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
+export default function MenuItemForm({ 
+  initialData,  // Support both naming conventions
+  item,
+  parentId, 
+  onSubmit,     // Support both naming conventions
+  onSave,
+  onCancel 
+}) {
+  // Use whichever prop is provided
+  const data = initialData || item || {}
+  const handleSave = onSubmit || onSave
+
   const [form, setForm] = useState({
     type: 'link',
     system_action: '',
@@ -13,32 +24,35 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
     visibility: 'all',
     visibility_language: 'all',
     is_active: true,
-    ...item
+    sort_order: 0,
+    ...data
   })
 
   useEffect(() => {
-    if (item) {
-      setForm({
-        type: 'link',
-        system_action: '',
-        text_ru: '',
-        text_en: '',
-        icon: '',
-        value: '',
-        visibility: 'all',
-        visibility_language: 'all',
-        is_active: true,
-        ...item
-      })
-    }
-  }, [item])
+    const newData = initialData || item || {}
+    setForm({
+      type: 'link',
+      system_action: '',
+      text_ru: '',
+      text_en: '',
+      icon: '',
+      value: '',
+      visibility: 'all',
+      visibility_language: 'all',
+      is_active: true,
+      sort_order: 0,
+      ...newData
+    })
+  }, [initialData, item])
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({
-      ...form,
-      parent_id: item?.parent_id ?? parentId
-    })
+    if (handleSave) {
+      handleSave({
+        ...form,
+        parent_id: form.parent_id ?? data?.parent_id ?? parentId ?? null
+      })
+    }
   }
 
   const handleChange = (field, value) => {
@@ -68,7 +82,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
         <div>
           <label className="label">Системное действие</label>
           <select
-            value={form.system_action}
+            value={form.system_action || ''}
             onChange={(e) => handleChange('system_action', e.target.value)}
             className="input"
           >
@@ -105,7 +119,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
         </div>
         <input
           type="text"
-          value={form.icon}
+          value={form.icon || ''}
           onChange={(e) => handleChange('icon', e.target.value)}
           placeholder="Или введите свой emoji"
           className="input"
@@ -114,10 +128,10 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
 
       {/* Text RU */}
       <div>
-        <label className="label">Текст кнопки (RU)</label>
+        <label className="label">Текст кнопки (RU) *</label>
         <input
           type="text"
-          value={form.text_ru}
+          value={form.text_ru || ''}
           onChange={(e) => handleChange('text_ru', e.target.value)}
           placeholder="Например: Тарифы"
           className="input"
@@ -130,7 +144,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
         <label className="label">Текст кнопки (EN)</label>
         <input
           type="text"
-          value={form.text_en}
+          value={form.text_en || ''}
           onChange={(e) => handleChange('text_en', e.target.value)}
           placeholder="Example: Tariffs"
           className="input"
@@ -143,7 +157,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
           <label className="label">URL ссылки</label>
           <input
             type="url"
-            value={form.value}
+            value={form.value || ''}
             onChange={(e) => handleChange('value', e.target.value)}
             placeholder="https://..."
             className="input"
@@ -155,7 +169,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
         <div>
           <label className="label">Текст сообщения</label>
           <textarea
-            value={form.value}
+            value={form.value || ''}
             onChange={(e) => handleChange('value', e.target.value)}
             placeholder="Текст, который отправится при нажатии"
             className="input"
@@ -168,7 +182,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
       <div>
         <label className="label">Видимость</label>
         <select
-          value={form.visibility}
+          value={form.visibility || 'all'}
           onChange={(e) => handleChange('visibility', e.target.value)}
           className="input"
         >
@@ -182,7 +196,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
       <div>
         <label className="label">Язык</label>
         <select
-          value={form.visibility_language}
+          value={form.visibility_language || 'all'}
           onChange={(e) => handleChange('visibility_language', e.target.value)}
           className="input"
         >
@@ -197,7 +211,7 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
         <input
           type="checkbox"
           id="is_active"
-          checked={form.is_active}
+          checked={form.is_active !== false}
           onChange={(e) => handleChange('is_active', e.target.checked)}
           className="w-4 h-4 rounded border-gray-300"
         />
@@ -208,11 +222,11 @@ export default function MenuItemForm({ item, parentId, onSave, onCancel }) {
 
       {/* Buttons */}
       <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <button type="button" onClick={onCancel} className="btn btn-secondary">
+        <button type="button" onClick={onCancel} className="btn-secondary">
           Отмена
         </button>
-        <button type="submit" className="btn btn-primary">
-          {item?.id ? 'Сохранить' : 'Добавить'}
+        <button type="submit" className="btn-primary">
+          {data?.id ? 'Сохранить' : 'Добавить'}
         </button>
       </div>
     </form>
