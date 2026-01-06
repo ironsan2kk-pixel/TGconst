@@ -344,12 +344,135 @@ curl http://localhost:8000/api/bots/manager/status \
 ---
 
 ## ЭТАП 14: Админка — Frontend
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Задачи:
-- [ ] frontend/package.json
-- [ ] React + Vite + Tailwind
-- [ ] Страницы: Login, Dashboard, Bots, Channels, Tariffs, Promocodes, Broadcasts
+- [x] frontend/package.json (React 18.2 + Vite 5.0 + Tailwind CSS 3.4)
+- [x] frontend/vite.config.js (proxy /api → localhost:8000)
+- [x] frontend/tailwind.config.js (кастомные цвета primary)
+- [x] frontend/postcss.config.js
+- [x] frontend/index.html
+- [x] frontend/src/main.jsx
+- [x] frontend/src/App.jsx (роутинг всех страниц)
+- [x] frontend/src/index.css (Tailwind directives)
+
+### API клиенты:
+- [x] frontend/src/api/client.js (axios с auth interceptors)
+- [x] frontend/src/api/auth.js (login, getMe)
+- [x] frontend/src/api/bots.js (CRUD + start/stop/restart/status)
+- [x] frontend/src/api/channels.js (CRUD)
+- [x] frontend/src/api/tariffs.js (CRUD)
+- [x] frontend/src/api/promocodes.js (CRUD + validate)
+- [x] frontend/src/api/broadcasts.js (CRUD + start/cancel/stats)
+
+### Контекст и хуки:
+- [x] frontend/src/context/AuthContext.jsx
+- [x] frontend/src/hooks/useAuth.js
+
+### Компоненты:
+- [x] frontend/src/components/Layout.jsx
+- [x] frontend/src/components/Sidebar.jsx (динамическая навигация)
+- [x] frontend/src/components/Header.jsx
+- [x] frontend/src/components/ui/Button.jsx (5 вариантов, 3 размера, loading)
+- [x] frontend/src/components/ui/Input.jsx (Input, Textarea, Select, Checkbox)
+- [x] frontend/src/components/ui/Card.jsx (Card, CardHeader, CardTitle, CardContent, CardFooter)
+- [x] frontend/src/components/ui/Badge.jsx (Badge, Alert, Modal, EmptyState, Spinner)
+
+### Страницы:
+- [x] frontend/src/pages/Login.jsx
+- [x] frontend/src/pages/Dashboard.jsx
+- [x] frontend/src/pages/Bots/BotList.jsx
+- [x] frontend/src/pages/Bots/BotCreate.jsx
+- [x] frontend/src/pages/Bots/BotEdit.jsx
+- [x] frontend/src/pages/Channels/ChannelList.jsx
+- [x] frontend/src/pages/Channels/ChannelCreate.jsx
+- [x] frontend/src/pages/Channels/ChannelEdit.jsx
+- [x] frontend/src/pages/Tariffs/TariffList.jsx
+- [x] frontend/src/pages/Tariffs/TariffCreate.jsx
+- [x] frontend/src/pages/Tariffs/TariffEdit.jsx
+- [x] frontend/src/pages/Promocodes/PromocodeList.jsx
+- [x] frontend/src/pages/Promocodes/PromocodeCreate.jsx
+- [x] frontend/src/pages/Promocodes/PromocodeEdit.jsx
+- [x] frontend/src/pages/Broadcasts/BroadcastList.jsx
+- [x] frontend/src/pages/Broadcasts/BroadcastCreate.jsx
+- [x] frontend/src/pages/Broadcasts/BroadcastView.jsx
+
+### Структура файлов:
+```
+frontend/
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+├── postcss.config.js
+├── index.html
+└── src/
+    ├── main.jsx
+    ├── App.jsx
+    ├── index.css
+    ├── api/
+    │   ├── client.js
+    │   ├── auth.js
+    │   ├── bots.js
+    │   ├── channels.js
+    │   ├── tariffs.js
+    │   ├── promocodes.js
+    │   └── broadcasts.js
+    ├── context/
+    │   └── AuthContext.jsx
+    ├── hooks/
+    │   └── useAuth.js
+    ├── components/
+    │   ├── Layout.jsx
+    │   ├── Sidebar.jsx
+    │   ├── Header.jsx
+    │   └── ui/
+    │       ├── Button.jsx
+    │       ├── Input.jsx
+    │       ├── Card.jsx
+    │       └── Badge.jsx
+    └── pages/
+        ├── Login.jsx
+        ├── Dashboard.jsx
+        ├── Bots/
+        │   ├── BotList.jsx
+        │   ├── BotCreate.jsx
+        │   └── BotEdit.jsx
+        ├── Channels/
+        │   ├── ChannelList.jsx
+        │   ├── ChannelCreate.jsx
+        │   └── ChannelEdit.jsx
+        ├── Tariffs/
+        │   ├── TariffList.jsx
+        │   ├── TariffCreate.jsx
+        │   └── TariffEdit.jsx
+        ├── Promocodes/
+        │   ├── PromocodeList.jsx
+        │   ├── PromocodeCreate.jsx
+        │   └── PromocodeEdit.jsx
+        └── Broadcasts/
+            ├── BroadcastList.jsx
+            ├── BroadcastCreate.jsx
+            └── BroadcastView.jsx
+```
+
+### Функционал:
+- JWT авторизация с автоматическим редиректом на /login при 401
+- Динамическая навигация: главное меню или меню бота
+- CRUD для ботов с управлением (start/stop/restart)
+- CRUD для каналов и тарифов
+- CRUD для промокодов с валидацией
+- Управление рассылками (создание, запуск, отмена, статистика)
+- Модальные окна подтверждения удаления
+- Loading states и error handling
+- Responsive дизайн
+
+### Проверка:
+```bash
+cd frontend
+npm install
+npm run dev
+# http://localhost:3000 → логин → дашборд → CRUD работает
+```
 
 ---
 
@@ -381,16 +504,16 @@ curl http://localhost:8000/api/bots/manager/status \
 | 11 | Подписки — Проверка и автокик | ✅ |
 | 12 | Шаблон бота — Промокоды и рассылки | ✅ |
 | 13 | Оркестратор ботов | ✅ |
-| 14 | Админка — Frontend | ⬜ |
+| 14 | Админка — Frontend | ✅ |
 | 15 | Деплой и документация | ⬜ |
 
 **Легенда:** ⬜ Не начат | ✅ Готово
 
-**Прогресс:** 13/15 этапов (87%)
+**Прогресс:** 14/15 этапов (93%)
 
 ---
 
 ## 🚀 ПРОДОЛЖЕНИЕ
 
-Напиши **"Этап 14"** для продолжения работы.
+Напиши **"Этап 15"** для продолжения работы.
 
