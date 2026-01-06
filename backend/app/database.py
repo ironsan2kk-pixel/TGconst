@@ -9,20 +9,18 @@ from sqlalchemy.orm import DeclarativeBase
 from .config import get_settings
 
 
-class Base(DeclarativeBase):
-    """Базовый класс для всех моделей"""
-    pass
-
-
-# Отдельные базовые классы для разных БД
 class MainBase(DeclarativeBase):
-    """Базовый класс для моделей главной БД"""
+    """Базовый класс для моделей главной БД (main.db)"""
     pass
 
 
 class BotBase(DeclarativeBase):
-    """Базовый класс для моделей БД бота"""
+    """Базовый класс для моделей БД бота (bot.db)"""
     pass
+
+
+# Для обратной совместимости
+Base = MainBase
 
 
 # Движки и сессии будут создаваться динамически
@@ -118,7 +116,7 @@ async def init_main_db():
     
     async with engine.begin() as conn:
         # Создаём таблицы для главной БД
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(MainBase.metadata.create_all)
     
     return engine
 
@@ -150,7 +148,7 @@ async def init_bot_db(bot_uuid: str):
     
     async with engine.begin() as conn:
         # Создаём таблицы для БД бота
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(BotBase.metadata.create_all)
     
     return engine
 
