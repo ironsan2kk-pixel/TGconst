@@ -140,21 +140,21 @@ start_bot.bat
 ---
 
 ## ЧАТ 3: CryptoBot оплата
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### CryptoBot API:
-- [ ] `bot/services/cryptobot.py` — CryptoBotAPI класс
-- [ ] create_invoice(), get_invoice(), verify_webhook_signature()
+- [x] `bot/services/cryptobot.py` — CryptoBotAPI класс
+- [x] create_invoice(), get_invoice(), verify_webhook_signature()
 
 ### Handler и Callbacks оплаты:
-- [ ] `bot/handlers/payment.py`
-- [ ] `bot/callbacks/payment.py`
+- [x] `bot/handlers/payment.py`
+- [x] `bot/callbacks/payment.py`
 
 ### Webhook:
-- [ ] `admin/api/webhooks.py` — POST /webhooks/cryptobot
+- [x] `admin/api/webhooks.py` — POST /webhooks/cryptobot
 
 ### Сервис подписок:
-- [ ] `bot/services/subscription.py`
+- [x] `bot/services/subscription.py`
 
 ### Проверка:
 ```cmd
@@ -344,7 +344,7 @@ cd frontend && npm install && npm run dev
 |---|-----|--------|----------|
 | 1 | Структура и БД | ✅ | Папки, модели, FastAPI |
 | 2 | Бот — Ядро | ✅ | /start, меню, тарифы, i18n |
-| 3 | CryptoBot | ⬜ | Оплата, webhook |
+| 3 | CryptoBot | ✅ | Оплата, webhook |
 | 4 | Userbot + Подписки | ⬜ | Инвайт, кик, проверка |
 | 5 | Фичи бота | ⬜ | Промокоды, админ, trial, **меню, FAQ** |
 | 6 | Рассылки | ⬜ | Broadcast система |
@@ -353,19 +353,19 @@ cd frontend && npm install && npm run dev
 
 **Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
-**Прогресс:** 2/8 чатов (25%)
+**Прогресс:** 3/8 чатов (37.5%)
 
 ---
 
 ## 🚀 СТАРТ
 
-1. Напиши **"Чат 3"**
+1. Напиши **"Чат 4"**
 2. Claude делает всё из списка
 3. Claude выгружает в GitHub
 4. Ты проверяешь
-5. Пишешь **"Чат 4"** или замечания
+5. Пишешь **"Чат 5"** или замечания
 6. Повторяем до конца
 
 ---
 
-**Готов. Жду команду "Чат 3"!**
+**Готов к Чату 4!**
