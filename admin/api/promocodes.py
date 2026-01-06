@@ -17,7 +17,7 @@ from admin.schemas.promocode import (
 )
 from bot.models import Promocode, Tariff, Payment
 
-router = APIRouter(prefix="/promocodes", tags=["Promocodes"])
+router = APIRouter()
 
 
 async def _build_promocode_response(
