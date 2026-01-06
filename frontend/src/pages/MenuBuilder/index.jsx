@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Save, Trash2, GripVertical, FileDown, Layout } from 'lucide-react'
+import { Plus, Save, Trash2, GripVertical, Layout } from 'lucide-react'
 import { Modal, ConfirmDialog, DragDropTree, MenuItemForm, MenuPreview } from '../../components'
 import { menuAPI } from '../../api/client'
 
@@ -22,7 +22,9 @@ export default function MenuBuilder() {
     setLoading(true)
     try {
       const response = await menuAPI.getAll()
-      const data = response.data.items || response.data; setMenuItems(Array.isArray(data) ? data : [])
+      console.log('Menu loaded:', response.data)
+      const data = response.data.items || response.data
+      setMenuItems(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading menu:', error)
     } finally {
@@ -33,6 +35,7 @@ export default function MenuBuilder() {
   const loadTemplates = async () => {
     try {
       const response = await menuAPI.getTemplates()
+      console.log('Templates loaded:', response.data)
       setTemplates(response.data.items || [])
     } catch (error) {
       console.error('Error loading templates:', error)
@@ -43,11 +46,14 @@ export default function MenuBuilder() {
     if (!confirm('Применить шаблон? Текущее меню будет заменено.')) return
     
     try {
-      await menuAPI.applyTemplate(templateId, true)
+      console.log('Applying template:', templateId)
+      const result = await menuAPI.applyTemplate(templateId, true)
+      console.log('Template applied:', result.data)
       setIsTemplatesOpen(false)
-      loadMenu()
+      await loadMenu()  // Wait for menu to load
     } catch (error) {
       console.error('Error applying template:', error)
+      alert('Ошибка применения шаблона: ' + (error.response?.data?.detail || error.message))
     }
   }
 
@@ -220,23 +226,27 @@ export default function MenuBuilder() {
           <p className="text-gray-600 dark:text-gray-400">
             Шаблоны содержат готовую структуру меню. При применении текущее меню будет заменено.
           </p>
-          <div className="grid gap-4">
-            {templates.map((template) => (
-              <div 
-                key={template.id}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-500 cursor-pointer transition-colors"
-                onClick={() => handleApplyTemplate(template.id)}
-              >
-                <h4 className="font-semibold text-lg">{template.name}</h4>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                  {template.description_ru}
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  {template.items_count} пунктов меню
-                </p>
-              </div>
-            ))}
-          </div>
+          {templates.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">Загрузка шаблонов...</p>
+          ) : (
+            <div className="grid gap-4">
+              {templates.map((template) => (
+                <div 
+                  key={template.id}
+                  className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-500 cursor-pointer transition-colors"
+                  onClick={() => handleApplyTemplate(template.id)}
+                >
+                  <h4 className="font-semibold text-lg">{template.name}</h4>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                    {template.description_ru}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {template.items_count} пунктов меню
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex justify-end pt-4">
             <button 
               onClick={() => setIsTemplatesOpen(false)}
