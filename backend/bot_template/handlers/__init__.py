@@ -9,13 +9,20 @@ from . import menu
 from . import channels
 from . import tariffs
 from . import payment
+from . import promocode
+from . import subscription
+from . import support
 
 # Создаём главный роутер
 router = Router()
 
 # Подключаем все роутеры хендлеров
+# Порядок важен: более специфичные роутеры должны быть выше
 router.include_router(start.router)
-router.include_router(menu.router)
+router.include_router(promocode.router)      # Промокоды (Этап 12)
+router.include_router(subscription.router)   # Подписки (Этап 12)
+router.include_router(support.router)        # Поддержка (Этап 12)
+router.include_router(menu.router)           # Главное меню
 router.include_router(channels.router)
 router.include_router(tariffs.router)
 router.include_router(payment.router)
