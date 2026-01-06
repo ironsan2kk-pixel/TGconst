@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .database import get_main_engine, close_all_engines
+from .database import init_main_db, close_all_engines, Base, get_main_engine
 
 
 @asynccontextmanager
@@ -22,8 +22,14 @@ async def lifespan(app: FastAPI):
     settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
     settings.bots_dir.mkdir(parents=True, exist_ok=True)
     
-    # Инициализируем главную БД (создаём движок)
-    await get_main_engine()
+    # Инициализируем главную БД и создаём таблицы
+    # Импортируем модели чтобы они зарегистрировались в Base.metadata
+    from .models.main_db import Admin, Bot, UserbotConfig
+    
+    engine = await get_main_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
     print(f"✅ Main database ready: {settings.MAIN_DB_PATH}")
     
     yield
