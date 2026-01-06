@@ -24,7 +24,7 @@
 | # | Этап | Статус |
 |---|------|--------|
 | 1 | Структура проекта | ✅ Готов |
-| 2 | База данных — Модели | ⬜ |
+| 2 | База данных — Модели | ✅ Готов |
 | 3 | Backend API — Auth | ⬜ |
 | 4 | Backend API — CRUD ботов | ⬜ |
 | 5 | Backend API — Каналы и тарифы | ⬜ |
@@ -79,17 +79,17 @@ TGconst/
 ---
 
 ## ЭТАП 2: База данных — Модели
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Задачи:
-- [ ] backend/app/models/__init__.py
-- [ ] backend/app/models/main_db.py (Admin, Bot, UserbotConfig)
-- [ ] backend/app/models/bot_db.py (Channel, Tariff, User, Subscription, Payment, Promocode, Broadcast)
-- [ ] Функция init_main_db() — создание main.db
-- [ ] Функция init_bot_db(uuid) — создание bot.db
-- [ ] Функция get_main_db() — сессия к main.db
-- [ ] Функция get_bot_db(uuid) — сессия к bot.db
-- [ ] scripts/create_admin.py — создание первого админа
+- [x] backend/app/models/__init__.py
+- [x] backend/app/models/main_db.py (Admin, Bot, UserbotConfig)
+- [x] backend/app/models/bot_db.py (Channel, Tariff, User, Subscription, Payment, Promocode, Broadcast)
+- [x] Функция init_main_db() — создание main.db
+- [x] Функция init_bot_db(uuid) — создание bot.db
+- [x] Функция get_main_db() — сессия к main.db
+- [x] Функция get_bot_db(uuid) — сессия к bot.db
+- [x] scripts/create_admin.py — создание первого админа
 
 ### Проверка:
 ```bash
