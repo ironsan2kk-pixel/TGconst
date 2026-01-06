@@ -17,7 +17,7 @@ from admin.schemas.menu import (
 )
 from bot.models import MenuItem
 
-router = APIRouter(prefix="/menu", tags=["Menu Constructor"])
+router = APIRouter()
 
 
 def _build_menu_item_response(item: MenuItem, children: list = None) -> MenuItemResponse:
