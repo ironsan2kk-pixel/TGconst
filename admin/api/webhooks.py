@@ -14,7 +14,7 @@ from bot.config import config
 from bot.models import Payment, User, Tariff
 from bot.services.cryptobot import CryptoBotAPI
 
-router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+router = APIRouter()
 
 
 async def process_cryptobot_payment(
