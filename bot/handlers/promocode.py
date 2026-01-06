@@ -2,13 +2,11 @@
 Хендлеры для работы с промокодами.
 """
 
-from typing import Callable
+from typing import Callable, Optional
+
 from aiogram import Router, F
-from typing import Callable
 from aiogram.types import Message, CallbackQuery
-from typing import Callable
 from aiogram.fsm.context import FSMContext
-from typing import Callable
 from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy.ext.asyncio import AsyncSession
 
