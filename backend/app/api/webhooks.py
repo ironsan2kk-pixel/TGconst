@@ -10,6 +10,7 @@ from sqlalchemy import select
 import logging
 
 from ..services.cryptobot import CryptoBotAPI
+from ..services.userbot import get_userbot_service
 from ..database import get_main_db, get_bot_db
 from ..models.main_db import Bot
 from ..models.bot_db import Payment, Subscription, User, Tariff, Channel
@@ -65,7 +66,7 @@ async def process_payment(bot_uuid: str, invoice_id: int, paid_at: datetime, pay
         bot_uuid: UUID бота
         invoice_id: ID инвойса
         paid_at: Дата оплаты
-        payload_data: Данные из payload (формат: user_id:tariff_id)
+        payload_data: Данные из payload (формат: user_id:tariff_id[:promocode_id])
     """
     try:
         # Парсим payload
@@ -155,13 +156,62 @@ async def notify_userbot_invite(bot_uuid: str, user_telegram_id: int, channel_id
     """
     Уведомить userbot о необходимости добавить пользователя в канал
     
-    В реальной реализации это будет:
-    - HTTP запрос к userbot API
-    - Или запись в Redis queue
-    - Или сообщение через внутренний Telegram канал
+    Args:
+        bot_uuid: UUID бота
+        user_telegram_id: Telegram ID пользователя
+        channel_id: ID канала в БД бота (не telegram channel_id!)
+        subscription_id: ID подписки
     """
-    logger.info(f"TODO: Invite user {user_telegram_id} to channel {channel_id} (subscription {subscription_id})")
-    # Реализация в Этапе 10
+    logger.info(
+        f"Отправка задачи invite: user={user_telegram_id}, "
+        f"channel={channel_id}, subscription={subscription_id}"
+    )
+    
+    userbot_service = get_userbot_service()
+    
+    result = await userbot_service.invite_user(
+        bot_uuid=bot_uuid,
+        user_telegram_id=user_telegram_id,
+        channel_id=channel_id,
+        subscription_id=subscription_id,
+        sync=False  # Асинхронно
+    )
+    
+    if result["success"]:
+        logger.info(f"Задача invite отправлена успешно: task_id={result.get('task_id')}")
+    else:
+        logger.error(f"Ошибка отправки задачи invite: {result.get('error')}")
+
+
+async def notify_userbot_kick(bot_uuid: str, user_telegram_id: int, channel_id: int, subscription_id: int):
+    """
+    Уведомить userbot о необходимости удалить пользователя из канала
+    
+    Args:
+        bot_uuid: UUID бота
+        user_telegram_id: Telegram ID пользователя
+        channel_id: ID канала в БД бота
+        subscription_id: ID подписки
+    """
+    logger.info(
+        f"Отправка задачи kick: user={user_telegram_id}, "
+        f"channel={channel_id}, subscription={subscription_id}"
+    )
+    
+    userbot_service = get_userbot_service()
+    
+    result = await userbot_service.kick_user(
+        bot_uuid=bot_uuid,
+        user_telegram_id=user_telegram_id,
+        channel_id=channel_id,
+        subscription_id=subscription_id,
+        sync=False
+    )
+    
+    if result["success"]:
+        logger.info(f"Задача kick отправлена успешно")
+    else:
+        logger.error(f"Ошибка отправки задачи kick: {result.get('error')}")
 
 
 async def send_payment_notification(bot_uuid: str, user_telegram_id: int, tariff_name: str, expires_at: datetime):
@@ -283,3 +333,19 @@ async def test_cryptobot_connection(bot_uuid: str):
             }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/userbot/health")
+async def userbot_health():
+    """Проверка состояния Userbot API"""
+    userbot_service = get_userbot_service()
+    result = await userbot_service.health_check()
+    return result
+
+
+@router.post("/userbot/reconnect")
+async def userbot_reconnect():
+    """Переподключить userbot"""
+    userbot_service = get_userbot_service()
+    result = await userbot_service.reconnect()
+    return result
