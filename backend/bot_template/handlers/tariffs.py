@@ -84,7 +84,7 @@ async def select_tariff(callback: CallbackQuery):
     # Клавиатура с кнопкой оплаты
     keyboard = get_payment_keyboard(tariff_id, tariff["channel_id"])
     
-    await callback.message.edit_text(text, reply_markup=keyboard)
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
 
@@ -106,7 +106,8 @@ async def back_to_tariffs(callback: CallbackQuery):
         await callback.message.edit_text(
             f"📢 <b>{channel['title']}</b>\n\n"
             "😔 К сожалению, для этого канала пока нет доступных тарифов.",
-            reply_markup=get_back_to_channels_keyboard()
+            reply_markup=get_back_to_channels_keyboard(),
+            parse_mode="HTML"
         )
         return
     
@@ -124,42 +125,8 @@ async def back_to_tariffs(callback: CallbackQuery):
     
     keyboard = get_tariffs_keyboard(tariffs, channel_id)
     
-    await callback.message.edit_text(text, reply_markup=keyboard)
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("pay:"))
-async def process_payment(callback: CallbackQuery):
-    """
-    Обработка нажатия кнопки оплаты.
-    Это заглушка - реальная оплата будет в Этапе 9.
-    """
-    # Извлекаем tariff_id:channel_id
-    parts = callback.data.split(":")
-    tariff_id = int(parts[1])
-    channel_id = int(parts[2])
-    
-    tariff = await get_tariff_by_id(tariff_id)
-    channel = await get_channel_by_id(channel_id)
-    
-    if not tariff or not channel:
-        await callback.answer("❌ Ошибка: тариф или канал не найден", show_alert=True)
-        return
-    
-    # Заглушка - в Этапе 9 здесь будет создание инвойса CryptoBot
-    await callback.answer(
-        "🔧 Оплата через CryptoBot будет доступна в следующем обновлении!",
-        show_alert=True
-    )
-
-
-@router.callback_query(F.data.startswith("promo:"))
-async def enter_promocode(callback: CallbackQuery):
-    """
-    Ввод промокода перед оплатой.
-    Это заглушка - реализация будет в Этапе 12.
-    """
-    await callback.answer(
-        "🎁 Ввод промокода будет доступен в следующем обновлении!",
-        show_alert=True
-    )
+# Обработчики pay: и promo: перенесены в handlers/payment.py (Этап 9, 12)
