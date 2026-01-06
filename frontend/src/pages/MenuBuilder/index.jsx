@@ -19,7 +19,7 @@ export default function MenuBuilder() {
     setLoading(true)
     try {
       const response = await menuAPI.getAll()
-      setMenuItems(response.data)
+      const data = response.data.items || response.data; setMenuItems(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading menu:', error)
     } finally {
