@@ -79,7 +79,7 @@
 ```cmd
 install.bat
 start_admin.bat
-:: http://localhost:8000/health → {"status": "ok", "database": "connected"}
+:: http://localhost:8001/health → {"status": "ok", "database": "connected"}
 ```
 
 ---
@@ -285,7 +285,7 @@ start_userbot.bat
 ### Проверка:
 ```cmd
 start_admin.bat
-:: http://localhost:8000/docs — Swagger работает
+:: http://localhost:8001/docs — Swagger работает
 ```
 
 ---
