@@ -8,8 +8,8 @@ from typing import Optional
 from datetime import datetime
 import aiosqlite
 
-from ..client import get_userbot_client
-from ..config import get_settings
+from client import get_userbot_client
+from config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
