@@ -108,10 +108,11 @@ async def handle_payment_start(callback: CallbackQuery, state: FSMContext, bot_c
         # Сохраняем платёж в БД
         payment_id = await create_payment(
             user_id=user["id"],
-            tariff_id=tariff_id,
+            invoice_id=str(invoice.invoice_id),
             amount=final_price,
             currency="USDT",
-            invoice_id=str(invoice.invoice_id),
+            tariff_id=tariff_id,
+            channel_id=channel["id"],
             promocode_id=promocode["id"] if promocode else None,
             discount_amount=discount
         )
