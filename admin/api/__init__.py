@@ -1,0 +1,19 @@
+"""API routes."""
+
+from fastapi import APIRouter
+
+# Main router
+router = APIRouter()
+
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    from ..database import check_db_connection
+    
+    db_ok = await check_db_connection()
+    
+    return {
+        "status": "ok" if db_ok else "error",
+        "database": "connected" if db_ok else "disconnected"
+    }
