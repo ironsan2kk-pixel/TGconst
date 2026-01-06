@@ -140,7 +140,7 @@ async def create_menu_item(
         type=data.type,
         system_action=data.system_action,
         text_ru=data.text_ru,
-        text_en=data.text_en,
+        text_en=data.text_en or data.text_ru,  # Default EN to RU
         icon=data.icon,
         value=data.value,
         visibility=data.visibility,
@@ -155,13 +155,12 @@ async def create_menu_item(
     return _build_menu_item_response(item, [])
 
 
-@router.patch("/{item_id}", response_model=MenuItemResponse)
-async def update_menu_item(
+async def _update_menu_item_impl(
     item_id: int,
     data: MenuItemUpdate,
-    session: AsyncSession = Depends(get_session)
-):
-    """Update a menu item."""
+    session: AsyncSession
+) -> MenuItemResponse:
+    """Implementation for updating menu item."""
     result = await session.execute(
         select(MenuItem).where(MenuItem.id == item_id)
     )
@@ -192,6 +191,26 @@ async def update_menu_item(
     
     children = await _build_tree(session, item.id)
     return _build_menu_item_response(item, children)
+
+
+@router.patch("/{item_id}", response_model=MenuItemResponse)
+async def update_menu_item_patch(
+    item_id: int,
+    data: MenuItemUpdate,
+    session: AsyncSession = Depends(get_session)
+):
+    """Update a menu item (PATCH)."""
+    return await _update_menu_item_impl(item_id, data, session)
+
+
+@router.put("/{item_id}", response_model=MenuItemResponse)
+async def update_menu_item_put(
+    item_id: int,
+    data: MenuItemUpdate,
+    session: AsyncSession = Depends(get_session)
+):
+    """Update a menu item (PUT)."""
+    return await _update_menu_item_impl(item_id, data, session)
 
 
 @router.post("/reorder")
@@ -262,7 +281,7 @@ async def duplicate_menu_item(
         type=item.type,
         system_action=item.system_action,
         text_ru=f"{item.text_ru} (copy)",
-        text_en=f"{item.text_en} (copy)",
+        text_en=f"{item.text_en} (copy)" if item.text_en else f"{item.text_ru} (copy)",
         icon=item.icon,
         value=item.value,
         visibility=item.visibility,
