@@ -80,7 +80,7 @@ TEXTS = {
     
     # Subscriptions
     'subscriptions': {
-        'title': '💳 My Subscriptions',
+        'title': 'My Subscriptions',
         'empty': '😔 You have no active subscriptions',
         'item': (
             '📦 <b>{tariff}</b>\n'
@@ -188,6 +188,35 @@ TEXTS = {
             'Plan: {tariff}\n'
             'Amount: {amount} USDT'
         ),
+        # Admin panel
+        'menu_title': '🔧 Admin Panel',
+        'stats_title': '📊 Statistics',
+        'total_users': 'Total users',
+        'new_today': 'New today',
+        'active_subs': 'Active subscriptions',
+        'revenue_today': 'Revenue today',
+        'revenue_month': 'Revenue this month',
+        'search_user': '🔍 Search user',
+        'grant_access': '➕ Grant access',
+        'revoke_access': '➖ Revoke access',
+        'ban_user': '🚫 Ban user',
+        'unban_user': '✅ Unban user',
+        'manual_payment': '💳 Manual payment',
+        'broadcast': '📨 Broadcast',
+        'user_not_found': 'User not found',
+        'access_granted': 'Access granted',
+        'access_revoked': 'Access revoked',
+        'user_banned': 'User banned',
+        'user_unbanned': 'User unbanned',
+        'payment_confirmed': 'Payment confirmed',
+        'broadcast_sent': 'Broadcast sent',
+    },
+    
+    # FAQ
+    'faq': {
+        'title': '❓ Frequently Asked Questions',
+        'empty': 'No questions yet',
+        'select': 'Select a question:',
     },
     
     # Buttons
