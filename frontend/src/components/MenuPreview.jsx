@@ -1,24 +1,33 @@
 import { useState } from 'react'
 
-export default function MenuPreview({ items, language = 'ru' }) {
+export default function MenuPreview({ items = [], language = 'ru' }) {
   const [currentPath, setCurrentPath] = useState([])
   
-  const getChildren = (parentId) => {
-    return items
-      .filter(item => {
-        if (item.parent_id !== parentId) return false
+  // items is already a tree structure with children property
+  const getCurrentItems = () => {
+    if (currentPath.length === 0) {
+      // Root level - return top-level items
+      return items.filter(item => {
         if (!item.is_active) return false
-        if (item.visibility_language !== 'all' && item.visibility_language !== language) return false
+        if (item.visibility_language && item.visibility_language !== 'all' && item.visibility_language !== language) return false
         return true
       })
-      .sort((a, b) => a.sort_order - b.sort_order)
+    } else {
+      // In a section - return children of current section
+      const currentSection = currentPath[currentPath.length - 1]
+      const children = currentSection.children || []
+      return children.filter(item => {
+        if (!item.is_active) return false
+        if (item.visibility_language && item.visibility_language !== 'all' && item.visibility_language !== language) return false
+        return true
+      })
+    }
   }
 
-  const currentParentId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : null
-  const currentItems = getChildren(currentParentId)
+  const currentItems = getCurrentItems()
   const currentTitle = currentPath.length > 0 
-    ? currentPath[currentPath.length - 1][language === 'ru' ? 'text_ru' : 'text_en'] 
-    : 'Главное меню'
+    ? (language === 'ru' ? currentPath[currentPath.length - 1].text_ru : (currentPath[currentPath.length - 1].text_en || currentPath[currentPath.length - 1].text_ru))
+    : (language === 'ru' ? 'Главное меню' : 'Main menu')
 
   const handleItemClick = (item) => {
     if (item.type === 'section') {
@@ -52,7 +61,7 @@ export default function MenuPreview({ items, language = 'ru' }) {
           </div>
 
           {/* Chat area */}
-          <div className="h-80 p-4 flex flex-col justify-end">
+          <div className="h-64 p-4 flex flex-col justify-end">
             {/* Message bubble */}
             <div className="bg-[#2b2b4a] rounded-2xl rounded-bl-sm p-3 max-w-[85%]">
               <p className="text-white text-sm">
@@ -75,7 +84,7 @@ export default function MenuPreview({ items, language = 'ru' }) {
             )}
 
             {/* Menu buttons */}
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {currentPath.length > 0 && (
                 <button
                   onClick={handleBack}
@@ -126,10 +135,10 @@ export default function MenuPreview({ items, language = 'ru' }) {
 
       {/* Language toggle */}
       <div className="flex justify-center gap-2 mt-4">
-        <span className={`px-3 py-1 rounded-full text-xs ${language === 'ru' ? 'bg-primary-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
+        <span className={`px-3 py-1 rounded-full text-xs cursor-pointer ${language === 'ru' ? 'bg-primary-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
           RU
         </span>
-        <span className={`px-3 py-1 rounded-full text-xs ${language === 'en' ? 'bg-primary-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
+        <span className={`px-3 py-1 rounded-full text-xs cursor-pointer ${language === 'en' ? 'bg-primary-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
           EN
         </span>
       </div>
