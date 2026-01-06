@@ -12,11 +12,11 @@ from ..database import get_main_db, get_bot_db
 from ..models.main_db import Admin, Bot
 from ..utils.security import decode_access_token
 
-# Схема авторизации через Bearer token
+# Схема авторизации через Bearer token (отключена)
 security = HTTPBearer(
     scheme_name="Bearer",
     description="JWT токен авторизации",
-    auto_error=True
+    auto_error=False  # Не требовать токен
 )
 
 
@@ -30,44 +30,21 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_current_admin(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
     db: Annotated[AsyncSession, Depends(get_db)]
 ) -> Admin:
     """
     Dependency для получения текущего авторизованного админа.
     
-    Проверяет JWT токен и возвращает объект Admin.
-    
-    Raises:
-        HTTPException 401: Если токен невалидный или истёк
-        HTTPException 401: Если админ не найден
+    АВТОРИЗАЦИЯ ОТКЛЮЧЕНА - возвращает первого админа или создаёт фиктивного.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Невалидный токен авторизации",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    # Декодируем токен
-    token = credentials.credentials
-    payload = decode_access_token(token)
-    
-    if payload is None:
-        raise credentials_exception
-    
-    # Получаем ID админа из токена
-    admin_id: int | None = payload.get("sub")
-    if admin_id is None:
-        raise credentials_exception
-    
-    # Ищем админа в БД
-    result = await db.execute(
-        select(Admin).where(Admin.id == int(admin_id))
-    )
+    # Ищем первого админа в БД
+    result = await db.execute(select(Admin).limit(1))
     admin = result.scalar_one_or_none()
     
     if admin is None:
-        raise credentials_exception
+        # Создаём фиктивного админа для ответа
+        admin = Admin(id=1, username="admin")
     
     return admin
 
