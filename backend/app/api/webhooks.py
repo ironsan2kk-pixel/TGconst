@@ -5,11 +5,12 @@ Webhook эндпоинты для обработки callback от CryptoBot
 from fastapi import APIRouter, Request, HTTPException, Header, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+from sqlalchemy import select
 import logging
 
 from ..services.cryptobot import CryptoBotAPI
-from ..database import get_main_db_session, get_bot_db_session
+from ..database import get_main_db, get_bot_db
 from ..models.main_db import Bot
 from ..models.bot_db import Payment, Subscription, User, Tariff, Channel
 
@@ -78,10 +79,8 @@ async def process_payment(bot_uuid: str, invoice_id: int, paid_at: datetime, pay
         promocode_id = int(parts[2]) if len(parts) > 2 and parts[2] else None
         
         # Получаем сессию БД бота
-        async with get_bot_db_session(bot_uuid) as session:
+        async for session in get_bot_db(bot_uuid):
             # Находим платёж по invoice_id
-            from sqlalchemy import select
-            
             stmt = select(Payment).where(Payment.invoice_id == str(invoice_id))
             result = await session.execute(stmt)
             payment = result.scalar_one_or_none()
@@ -117,8 +116,6 @@ async def process_payment(bot_uuid: str, invoice_id: int, paid_at: datetime, pay
                 return
             
             # Создаём подписку
-            from datetime import timedelta
-            
             starts_at = datetime.utcnow()
             expires_at = starts_at + timedelta(days=tariff.duration_days)
             
@@ -142,13 +139,13 @@ async def process_payment(bot_uuid: str, invoice_id: int, paid_at: datetime, pay
             logger.info(f"Payment {invoice_id} processed successfully. Subscription created for user {user.telegram_id}")
             
             # Отправляем задачу на добавление в канал
-            # Это будет реализовано через очередь задач или HTTP запрос к userbot
             await notify_userbot_invite(
                 bot_uuid=bot_uuid,
                 user_telegram_id=user.telegram_id,
                 channel_id=tariff.channel_id,
                 subscription_id=subscription.id
             )
+            break  # Выходим из async for после обработки
             
     except Exception as e:
         logger.exception(f"Error processing payment: {e}")
@@ -170,8 +167,6 @@ async def notify_userbot_invite(bot_uuid: str, user_telegram_id: int, channel_id
 async def send_payment_notification(bot_uuid: str, user_telegram_id: int, tariff_name: str, expires_at: datetime):
     """
     Отправить уведомление об успешной оплате через бота
-    
-    Это будет вызываться из бота через его callback
     """
     pass  # Реализуется через бота
 
@@ -192,8 +187,8 @@ async def cryptobot_webhook(
     body = await request.body()
     
     # Получаем бота из БД для проверки токена
-    async with get_main_db_session() as session:
-        from sqlalchemy import select
+    cryptobot_token = None
+    async for session in get_main_db():
         stmt = select(Bot).where(Bot.uuid == bot_uuid)
         result = await session.execute(stmt)
         bot = result.scalar_one_or_none()
@@ -207,6 +202,7 @@ async def cryptobot_webhook(
             raise HTTPException(status_code=400, detail="CryptoBot not configured")
         
         cryptobot_token = bot.cryptobot_token
+        break
     
     # Проверяем подпись
     if crypto_pay_api_signature:
@@ -237,14 +233,18 @@ async def cryptobot_webhook(
     
     if update_type == "invoice_paid":
         # Получаем данные об оплаченном инвойсе
-        invoice_id = data.get("payload", {}).get("invoice_id")
-        if not invoice_id:
+        payload_obj = data.get("payload", {})
+        
+        if isinstance(payload_obj, dict):
+            invoice_id = payload_obj.get("invoice_id")
+            paid_at_str = payload_obj.get("paid_at")
+            payload_data = payload_obj.get("payload", "")
+        else:
             invoice_id = data.get("invoice_id")
+            paid_at_str = data.get("paid_at")
+            payload_data = str(payload_obj) if payload_obj else ""
         
-        paid_at_str = data.get("payload", {}).get("paid_at") or data.get("paid_at")
         paid_at = datetime.fromisoformat(paid_at_str.replace("Z", "+00:00")) if paid_at_str else datetime.utcnow()
-        
-        payload_data = data.get("payload", {}).get("payload") or data.get("payload_data", "")
         
         # Обрабатываем платёж в фоне
         background_tasks.add_task(
@@ -261,8 +261,7 @@ async def cryptobot_webhook(
 @router.get("/cryptobot/{bot_uuid}/test")
 async def test_cryptobot_connection(bot_uuid: str):
     """Тестовый эндпоинт для проверки подключения к CryptoBot"""
-    async with get_main_db_session() as session:
-        from sqlalchemy import select
+    async for session in get_main_db():
         stmt = select(Bot).where(Bot.uuid == bot_uuid)
         result = await session.execute(stmt)
         bot = result.scalar_one_or_none()
