@@ -15,7 +15,7 @@ from admin.schemas.channel import (
 )
 from bot.models import Channel, TariffChannel
 
-router = APIRouter(prefix="/channels", tags=["Channels"])
+router = APIRouter()
 
 
 @router.get("", response_model=ChannelListResponse)
