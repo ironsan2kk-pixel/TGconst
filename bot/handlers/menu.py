@@ -7,12 +7,46 @@ from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from bot.models import User, Subscription
-from bot.keyboards import main_menu_keyboard, language_keyboard, support_keyboard
+from bot.models import User, Subscription, MenuItem
+from bot.keyboards import main_menu_keyboard, language_keyboard, support_keyboard, dynamic_menu_keyboard
 from bot.config import config
 from bot.locales import get_text
 
 router = Router()
+
+
+async def get_menu_items_from_db(
+    session: AsyncSession,
+    parent_id: int | None = None,
+    has_subscription: bool = False,
+    language: str = 'ru'
+) -> list[MenuItem]:
+    """Получить пункты меню из БД с учётом условий видимости."""
+    query = select(MenuItem).where(
+        MenuItem.parent_id == parent_id,
+        MenuItem.is_active == True
+    ).order_by(MenuItem.sort_order)
+    
+    result = await session.execute(query)
+    items = result.scalars().all()
+    
+    # Фильтруем по условиям
+    filtered = []
+    for item in items:
+        # Проверка языка
+        if item.visibility_language and item.visibility_language != 'all':
+            if item.visibility_language != language:
+                continue
+        
+        # Проверка подписки
+        if item.visibility == 'subscribed' and not has_subscription:
+            continue
+        if item.visibility == 'not_subscribed' and has_subscription:
+            continue
+        
+        filtered.append(item)
+    
+    return filtered
 
 
 @router.callback_query(F.data == "menu:main")
@@ -33,9 +67,19 @@ async def menu_main(
     )
     has_subscription = result.scalar_one_or_none() is not None
     
+    # Пробуем загрузить меню из БД
+    items = await get_menu_items_from_db(session, None, has_subscription, lang)
+    
+    if items:
+        # Используем динамическое меню из БД
+        keyboard = dynamic_menu_keyboard(items, lang)
+    else:
+        # Fallback к статическому меню
+        keyboard = main_menu_keyboard(lang, has_subscription)
+    
     await callback.message.edit_text(
         _('menu.title'),
-        reply_markup=main_menu_keyboard(lang, has_subscription)
+        reply_markup=keyboard
     )
     await callback.answer()
 
@@ -78,7 +122,6 @@ async def menu_subscriptions(
     _: callable,
 ):
     """Показать подписки пользователя."""
-    # Будет реализовано в Чат 5
     from bot.keyboards import back_to_menu_keyboard
     
     result = await session.execute(
@@ -95,42 +138,14 @@ async def menu_subscriptions(
             reply_markup=back_to_menu_keyboard(lang)
         )
     else:
-        # Формируем список подписок (базовая реализация)
+        # Формируем список подписок
         text = _('subscriptions.title') + '\n\n'
-        
+        # Базовая реализация - будет расширена в Чат 5
         for sub in subscriptions:
-            if sub.expires_at:
-                expires = sub.expires_at.strftime('%d.%m.%Y')
-                text += _('subscriptions.item', 
-                         tariff=f"Тариф #{sub.tariff_id}",
-                         expires=expires,
-                         channels_count=0) + '\n\n'
-            else:
-                text += _('subscriptions.item_forever',
-                         tariff=f"Тариф #{sub.tariff_id}",
-                         channels_count=0) + '\n\n'
+            text += f"• ID: {sub.id}\n"
         
         await callback.message.edit_text(
             text,
             reply_markup=back_to_menu_keyboard(lang)
         )
-    
     await callback.answer()
-
-
-@router.callback_query(F.data == "menu:promocode")
-async def menu_promocode(
-    callback: CallbackQuery,
-    lang: str,
-    _: callable,
-):
-    """Показать ввод промокода."""
-    # Будет реализовано в Чат 5
-    from bot.keyboards import back_to_menu_keyboard
-    
-    await callback.message.edit_text(
-        _('promocode.enter'),
-        reply_markup=back_to_menu_keyboard(lang)
-    )
-    await callback.answer()
-
