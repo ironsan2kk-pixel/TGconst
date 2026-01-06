@@ -60,19 +60,19 @@ body {
 }
 
 .btn-primary {
-  @apply bg-primary-600 text-white hover:bg-primary-700;
+  @apply px-4 py-2 rounded-lg font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors duration-200;
 }
 
 .btn-secondary {
-  @apply bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600;
+  @apply px-4 py-2 rounded-lg font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200;
 }
 
 .btn-danger {
-  @apply bg-red-600 text-white hover:bg-red-700;
+  @apply px-4 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 transition-colors duration-200;
 }
 
 .btn-success {
-  @apply bg-green-600 text-white hover:bg-green-700;
+  @apply px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 transition-colors duration-200;
 }
 
 /* Input styles */
@@ -101,20 +101,28 @@ body {
   @apply px-2 py-1 text-xs font-medium rounded-full;
 }
 
-.badge-success {
-  @apply bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400;
+.badge-green, .badge-success {
+  @apply px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400;
 }
 
-.badge-warning {
-  @apply bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400;
+.badge-yellow, .badge-warning {
+  @apply px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400;
 }
 
-.badge-danger {
-  @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400;
+.badge-red, .badge-danger {
+  @apply px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400;
 }
 
-.badge-info {
-  @apply bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400;
+.badge-blue, .badge-info {
+  @apply px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400;
+}
+
+.badge-gray {
+  @apply px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300;
+}
+
+.badge-primary {
+  @apply px-2 py-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-400;
 }
 
 /* Animations */
