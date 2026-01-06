@@ -25,7 +25,7 @@ async def show_subscriptions(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Показать список подписок пользователя."""
     subscriptions = await get_user_subscriptions(
@@ -84,7 +84,7 @@ async def show_subscription_detail(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Показать детали подписки."""
     subscription_id = int(callback.data.split(':')[1])
@@ -117,6 +117,7 @@ async def show_subscription_detail(
         status = _('subscriptions.status_trial')
     elif subscription.expires_at:
         from datetime import datetime
+from typing import Callable
         now = datetime.utcnow()
         days_left = (subscription.expires_at - now).days
         if days_left <= 3:
@@ -158,7 +159,7 @@ async def back_to_menu(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
 ):
     """Вернуться в главное меню."""
     from bot.keyboards.inline import main_menu_keyboard
