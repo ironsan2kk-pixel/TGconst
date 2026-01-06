@@ -3,26 +3,30 @@ import { ChevronLeft, ChevronRight, Search, ChevronDown, ChevronUp } from 'lucid
 
 export default function DataTable({ 
   columns, 
-  data, 
+  data = [], 
   searchable = true,
   searchKeys = [],
   pagination = true,
   pageSize = 10,
-  actions,
+  actions = [],
+  loading = false,
   emptyMessage = 'Нет данных'
 }) {
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
 
+  // Ensure data is array
+  const safeData = Array.isArray(data) ? data : []
+
   // Filter data
   const filteredData = searchable && search
-    ? data.filter(item => 
+    ? safeData.filter(item => 
         searchKeys.some(key => 
-          String(item[key]).toLowerCase().includes(search.toLowerCase())
+          String(item[key] || '').toLowerCase().includes(search.toLowerCase())
         )
       )
-    : data
+    : safeData
 
   // Sort data
   const sortedData = sortConfig.key
@@ -36,7 +40,7 @@ export default function DataTable({
     : filteredData
 
   // Paginate data
-  const totalPages = Math.ceil(sortedData.length / pageSize)
+  const totalPages = Math.ceil(sortedData.length / pageSize) || 1
   const paginatedData = pagination
     ? sortedData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
     : sortedData
@@ -46,6 +50,41 @@ export default function DataTable({
       key,
       direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
     }))
+  }
+
+  // Render actions - support both array and function
+  const renderActions = (row) => {
+    if (typeof actions === 'function') {
+      return actions(row)
+    }
+    if (Array.isArray(actions)) {
+      return actions
+        .filter(action => !action.show || action.show(row))
+        .map((action, idx) => (
+          <button
+            key={idx}
+            onClick={() => action.onClick(row)}
+            className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${action.className || 'text-gray-600 dark:text-gray-400'}`}
+            title={action.label}
+          >
+            {action.icon && <action.icon className="w-4 h-4" />}
+          </button>
+        ))
+    }
+    return null
+  }
+
+  const hasActions = actions && (typeof actions === 'function' || actions.length > 0)
+
+  if (loading) {
+    return (
+      <div className="card p-8 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">Загрузка...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -93,7 +132,7 @@ export default function DataTable({
                   </div>
                 </th>
               ))}
-              {actions && (
+              {hasActions && (
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Действия
                 </th>
@@ -104,7 +143,7 @@ export default function DataTable({
             {paginatedData.length === 0 ? (
               <tr>
                 <td 
-                  colSpan={columns.length + (actions ? 1 : 0)} 
+                  colSpan={columns.length + (hasActions ? 1 : 0)} 
                   className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                 >
                   {emptyMessage}
@@ -115,13 +154,13 @@ export default function DataTable({
                 <tr key={row.id || idx} className="table-row">
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                      {col.render ? col.render(row[col.key], row) : row[col.key]}
+                      {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
                     </td>
                   ))}
-                  {actions && (
+                  {hasActions && (
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {actions(row)}
+                        {renderActions(row)}
                       </div>
                     </td>
                   )}
