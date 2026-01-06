@@ -34,7 +34,7 @@ export default function Modal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 transition-opacity animate-fadeIn"
+        className="fixed inset-0 bg-black/50 transition-opacity"
         onClick={onClose}
       />
       
@@ -44,7 +44,6 @@ export default function Modal({
           relative w-full ${sizeClasses[size]}
           bg-white dark:bg-gray-800 
           rounded-xl shadow-xl
-          animate-slideIn
         `}>
           {/* Header */}
           {(title || showClose) && (
@@ -84,22 +83,23 @@ export function ConfirmDialog({
   message = 'Вы уверены?',
   confirmText = 'Подтвердить',
   cancelText = 'Отмена',
-  variant = 'danger'
+  variant = 'primary',
+  danger = false  // Support boolean danger prop
 }) {
-  const variantClasses = {
-    danger: 'btn-danger',
-    primary: 'btn-primary',
-    success: 'btn-success'
-  }
+  // If danger prop is true, use danger variant
+  const actualVariant = danger ? 'danger' : variant
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
       <div className="flex justify-end gap-3">
-        <button onClick={onClose} className="btn btn-secondary">
+        <button onClick={onClose} className="btn-secondary">
           {cancelText}
         </button>
-        <button onClick={onConfirm} className={`btn ${variantClasses[variant]}`}>
+        <button 
+          onClick={onConfirm} 
+          className={actualVariant === 'danger' ? 'btn-primary bg-red-600 hover:bg-red-700' : 'btn-primary'}
+        >
           {confirmText}
         </button>
       </div>
