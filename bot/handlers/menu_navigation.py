@@ -206,7 +206,7 @@ async def show_text_item(
     lang: str,
     _: Callable,
 ):
-    """Показать текстовое сообщение из элемента меню."""
+    """Показать текстовое сообщение из элемента меню (с фото если есть)."""
     item_id = int(callback.data.split(':')[1])
     
     item = await session.get(MenuItem, item_id)
@@ -226,10 +226,22 @@ async def show_text_item(
         )]
     ])
     
-    await callback.message.edit_text(
-        item.value,
-        reply_markup=keyboard
-    )
+    # Если есть фото - отправляем новым сообщением (edit_text не умеет в фото)
+    if item.photo_file_id:
+        # Удаляем старое сообщение и отправляем новое с фото
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=item.photo_file_id,
+            caption=item.value,
+            reply_markup=keyboard,
+            parse_mode='HTML'
+        )
+    else:
+        await callback.message.edit_text(
+            item.value,
+            reply_markup=keyboard,
+            parse_mode='HTML'
+        )
     await callback.answer()
 
 
@@ -313,4 +325,5 @@ async def show_faq_from_menu(
         reply_markup=keyboard
     )
     await callback.answer()
+
 
