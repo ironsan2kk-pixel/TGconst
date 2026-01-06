@@ -19,6 +19,7 @@ class MenuItemBase(BaseModel):
     text_en: str | None = Field(None, max_length=100, description="Button text EN")
     icon: str | None = Field(None, max_length=10, description="Emoji icon")
     value: str | None = Field(None, description="URL / message text / faq_id")
+    photo_file_id: str | None = Field(None, max_length=255, description="Photo file_id for text+photo")
     visibility: Visibility | str = Field("all", description="Visibility condition")
     visibility_language: VisibilityLanguage | str = Field("all", description="Language visibility")
     sort_order: int = Field(0, description="Sort order")
@@ -39,6 +40,7 @@ class MenuItemUpdate(BaseModel):
     text_en: str | None = Field(None, max_length=100)
     icon: str | None = None
     value: str | None = None
+    photo_file_id: str | None = None
     visibility: Visibility | str | None = None
     visibility_language: VisibilityLanguage | str | None = None
     sort_order: int | None = None
@@ -51,7 +53,7 @@ class MenuItemReorder(BaseModel):
 
 
 class MenuItemResponse(BaseModel):
-    """Schema for menu item response."""
+    """Menu item response schema."""
     id: int
     parent_id: int | None
     type: str
@@ -60,47 +62,37 @@ class MenuItemResponse(BaseModel):
     text_en: str | None
     icon: str | None
     value: str | None
+    photo_file_id: str | None
     visibility: str
     visibility_language: str
     sort_order: int
     is_active: bool
-    created_at: datetime
-    children: list["MenuItemResponse"] = []
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
 
 
-class MenuItemFlatResponse(BaseModel):
-    """Schema for flat menu item response (without children)."""
+# === Menu Templates ===
+
+class MenuTemplateBase(BaseModel):
+    """Base template schema."""
+    name: str = Field(..., min_length=1, max_length=100)
+    description_ru: str | None = None
+    description_en: str | None = None
+    template_data: str = Field(..., description="JSON structure of menu items")
+    is_active: bool = True
+
+
+class MenuTemplateCreate(MenuTemplateBase):
+    """Schema for creating a template."""
+    pass
+
+
+class MenuTemplateResponse(MenuTemplateBase):
+    """Template response schema."""
     id: int
-    parent_id: int | None
-    type: str
-    system_action: str | None
-    text_ru: str
-    text_en: str | None
-    icon: str | None
-    value: str | None
-    visibility: str
-    visibility_language: str
-    sort_order: int
-    is_active: bool
-    created_at: datetime
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
-
-
-class MenuTreeResponse(BaseModel):
-    """Schema for menu tree response."""
-    items: list[MenuItemResponse]
-
-
-class MenuItemListResponse(BaseModel):
-    """Schema for list of menu items."""
-    items: list[MenuItemFlatResponse]
-    total: int
-
-
-# Update forward references
-MenuItemResponse.model_rebuild()
