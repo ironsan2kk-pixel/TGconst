@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     USERBOT_PHONE: str = ""
     USERBOT_SESSION_STRING: str = ""
     
+    # === USERBOT SERVER ===
+    USERBOT_HOST: str = "127.0.0.1"
+    USERBOT_PORT: int = 8001
+    
     # === SERVER ===
     BACKEND_HOST: str = "0.0.0.0"
     BACKEND_PORT: int = 8000
