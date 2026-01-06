@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from admin.database import get_session
 from bot.models import User, Subscription, Payment, Promocode, Tariff
 
-router = APIRouter(prefix="/export", tags=["Export"])
+router = APIRouter()
 
 
 @router.get("/users")
