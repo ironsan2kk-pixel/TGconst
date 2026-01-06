@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from admin.database import get_session
 from bot.models import User, Subscription, Payment, Tariff
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter()
 
 
 @router.get("/stats")
