@@ -25,9 +25,9 @@ if not exist ".env" (
     exit /b 1
 )
 
-echo Запуск FastAPI на http://localhost:8000
-echo Swagger UI: http://localhost:8000/docs
-echo Health: http://localhost:8000/health
+echo Запуск FastAPI на http://localhost:8001
+echo Swagger UI: http://localhost:8001/docs
+echo Health: http://localhost:8001/health
 echo.
 echo Для остановки нажмите Ctrl+C
 echo.
