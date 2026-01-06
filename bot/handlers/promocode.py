@@ -2,9 +2,13 @@
 Хендлеры для работы с промокодами.
 """
 
+from typing import Callable
 from aiogram import Router, F
+from typing import Callable
 from aiogram.types import Message, CallbackQuery
+from typing import Callable
 from aiogram.fsm.context import FSMContext
+from typing import Callable
 from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,7 +36,7 @@ class PromocodeStates(StatesGroup):
 async def promocode_menu(
     callback: CallbackQuery,
     lang: str,
-    _: callable,
+    _: Callable,
     state: FSMContext,
 ):
     """Меню ввода промокода."""
@@ -51,7 +55,7 @@ async def process_promocode(
     session: AsyncSession,
     user: User,
     lang: str,
-    _: callable,
+    _: Callable,
     state: FSMContext,
 ):
     """Обработка введённого промокода."""
