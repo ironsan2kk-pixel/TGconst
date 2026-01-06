@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 
 from admin.config import settings
 
-router = APIRouter(prefix="/backup", tags=["Backup"])
+router = APIRouter()
 
 # Paths
 DATA_DIR = Path(settings.DATABASE_PATH).parent
