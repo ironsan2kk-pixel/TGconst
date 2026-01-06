@@ -1,22 +1,29 @@
 """
 Обработчик платежей через CryptoBot
 """
-
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from sqlalchemy import select
 from datetime import datetime
 import logging
+import sys
+from pathlib import Path
 
-from ..database import get_session
-from ..loader import bot, config
-from ..models import User, Tariff, Channel, Payment, Promocode
+from ..database import (
+    get_tariff_by_id,
+    get_channel_by_id,
+    get_user_by_telegram_id,
+    create_payment,
+    validate_promocode,
+    use_promocode,
+    get_pending_payment
+)
+from ..keyboards.inline import get_confirm_payment_keyboard, get_back_to_channels_keyboard
 
 logger = logging.getLogger(__name__)
 
-router = Router()
+router = Router(name="payment")
 
 
 class PaymentStates(StatesGroup):
@@ -24,411 +31,278 @@ class PaymentStates(StatesGroup):
     waiting_promocode = State()
 
 
-async def get_cryptobot_api():
+def get_cryptobot_api(token: str):
     """Получить экземпляр CryptoBot API"""
-    import sys
-    sys.path.insert(0, str(config.base_path.parent.parent))
-    from app.services.cryptobot import CryptoBotAPI
-    return CryptoBotAPI(config.cryptobot_token)
-
-
-async def calculate_price(tariff: Tariff, promocode: Promocode = None) -> tuple[float, float]:
-    """
-    Рассчитать цену с учётом промокода
-    
-    Returns:
-        tuple: (финальная цена, размер скидки)
-    """
-    original_price = tariff.price
-    discount = 0.0
-    
-    if promocode:
-        if promocode.discount_percent:
-            discount = original_price * (promocode.discount_percent / 100)
-        elif promocode.discount_amount:
-            discount = min(promocode.discount_amount, original_price)
-    
-    final_price = max(original_price - discount, 0)
-    return final_price, discount
+    # Добавляем путь к backend/app для импорта
+    project_root = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    from backend.app.services.cryptobot import CryptoBotAPI
+    return CryptoBotAPI(token)
 
 
 @router.callback_query(F.data.startswith("pay:"))
-async def handle_payment_start(callback: CallbackQuery, state: FSMContext):
+async def handle_payment_start(callback: CallbackQuery, state: FSMContext, bot_config: dict):
     """
     Начало процесса оплаты
-    Формат callback: pay:{tariff_id}
+    Формат callback: pay:{tariff_id}:{channel_id}
     """
     await callback.answer()
     
-    tariff_id = int(callback.data.split(":")[1])
+    parts = callback.data.split(":")
+    tariff_id = int(parts[1])
+    channel_id = int(parts[2]) if len(parts) > 2 else None
     
-    async with get_session() as session:
-        # Получаем тариф
-        stmt = select(Tariff).where(Tariff.id == tariff_id, Tariff.is_active == True)
-        result = await session.execute(stmt)
-        tariff = result.scalar_one_or_none()
+    # Получаем тариф
+    tariff = await get_tariff_by_id(tariff_id)
+    if not tariff:
+        await callback.message.edit_text("❌ Тариф не найден или недоступен")
+        return
+    
+    # Получаем канал
+    channel = await get_channel_by_id(tariff["channel_id"])
+    if not channel:
+        await callback.message.edit_text("❌ Канал не найден")
+        return
+    
+    # Получаем пользователя
+    user = await get_user_by_telegram_id(callback.from_user.id)
+    if not user:
+        await callback.message.edit_text("❌ Пользователь не найден. Нажмите /start")
+        return
+    
+    # Получаем данные из state (промокод если был)
+    data = await state.get_data()
+    promocode = data.get("promocode")
+    discount = data.get("discount", 0)
+    
+    # Вычисляем финальную цену
+    original_price = tariff["price"]
+    final_price = max(original_price - discount, 0)
+    
+    # Получаем токен CryptoBot из конфига бота
+    cryptobot_token = bot_config.get("cryptobot_token")
+    if not cryptobot_token:
+        await callback.message.edit_text(
+            "❌ Оплата временно недоступна.\n"
+            "Обратитесь к администратору."
+        )
+        return
+    
+    try:
+        # Создаём инвойс в CryptoBot
+        api = get_cryptobot_api(cryptobot_token)
         
-        if not tariff:
-            await callback.message.edit_text("❌ Тариф не найден или недоступен")
-            return
+        # Формируем payload для идентификации платежа
+        payload = f"{user['id']}:{tariff_id}"
+        if promocode:
+            payload += f":{promocode['id']}"
         
-        # Получаем канал
-        stmt = select(Channel).where(Channel.id == tariff.channel_id)
-        result = await session.execute(stmt)
-        channel = result.scalar_one_or_none()
+        invoice = await api.create_invoice(
+            amount=final_price,
+            asset="USDT",
+            description=f"Подписка на {channel['title']} ({tariff['name']})",
+            payload=payload,
+            expires_in=3600  # 1 час
+        )
         
-        if not channel:
-            await callback.message.edit_text("❌ Канал не найден")
-            return
-        
-        # Получаем пользователя
-        stmt = select(User).where(User.telegram_id == callback.from_user.id)
-        result = await session.execute(stmt)
-        user = result.scalar_one_or_none()
-        
-        if not user:
-            await callback.message.edit_text("❌ Пользователь не найден")
-            return
+        # Сохраняем платёж в БД
+        payment_id = await create_payment(
+            user_id=user["id"],
+            tariff_id=tariff_id,
+            amount=final_price,
+            currency="USDT",
+            invoice_id=str(invoice.invoice_id),
+            promocode_id=promocode["id"] if promocode else None,
+            discount_amount=discount
+        )
         
         # Сохраняем в state
         await state.update_data(
-            tariff_id=tariff.id,
-            channel_id=channel.id,
-            user_id=user.id,
-            original_price=tariff.price,
-            tariff_name=tariff.name,
-            channel_title=channel.title,
-            duration_days=tariff.duration_days
-        )
-    
-    # Показываем информацию и опцию промокода
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎟 Ввести промокод", callback_data="enter_promo")],
-        [InlineKeyboardButton(text="💳 Оплатить", callback_data="create_invoice")],
-        [InlineKeyboardButton(text="◀️ Назад", callback_data=f"channel:{tariff.channel_id}")]
-    ])
-    
-    text = (
-        f"📦 <b>Оформление подписки</b>\n\n"
-        f"📺 Канал: <b>{channel.title}</b>\n"
-        f"📋 Тариф: <b>{tariff.name}</b>\n"
-        f"⏱ Срок: <b>{tariff.duration_days} дн.</b>\n"
-        f"💰 Стоимость: <b>${tariff.price:.2f}</b>\n\n"
-        f"Выберите действие:"
-    )
-    
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-
-
-@router.callback_query(F.data == "enter_promo")
-async def handle_enter_promo(callback: CallbackQuery, state: FSMContext):
-    """Запрос ввода промокода"""
-    await callback.answer()
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_promo")]
-    ])
-    
-    await callback.message.edit_text(
-        "🎟 <b>Введите промокод:</b>\n\n"
-        "Отправьте код сообщением",
-        reply_markup=keyboard,
-        parse_mode="HTML"
-    )
-    
-    await state.set_state(PaymentStates.waiting_promocode)
-
-
-@router.message(PaymentStates.waiting_promocode)
-async def handle_promocode_input(message: Message, state: FSMContext):
-    """Обработка введённого промокода"""
-    code = message.text.strip().upper()
-    data = await state.get_data()
-    
-    async with get_session() as session:
-        # Ищем промокод
-        stmt = select(Promocode).where(
-            Promocode.code == code,
-            Promocode.is_active == True
-        )
-        result = await session.execute(stmt)
-        promocode = result.scalar_one_or_none()
-        
-        if not promocode:
-            await message.answer("❌ Промокод не найден или недействителен")
-            return
-        
-        # Проверяем срок действия
-        now = datetime.utcnow()
-        if promocode.valid_from and now < promocode.valid_from:
-            await message.answer("❌ Промокод ещё не активен")
-            return
-        
-        if promocode.valid_until and now > promocode.valid_until:
-            await message.answer("❌ Промокод истёк")
-            return
-        
-        # Проверяем лимит использований
-        if promocode.max_uses and promocode.used_count >= promocode.max_uses:
-            await message.answer("❌ Промокод исчерпан")
-            return
-        
-        # Получаем тариф для расчёта скидки
-        stmt = select(Tariff).where(Tariff.id == data['tariff_id'])
-        result = await session.execute(stmt)
-        tariff = result.scalar_one_or_none()
-        
-        if not tariff:
-            await message.answer("❌ Ошибка: тариф не найден")
-            return
-        
-        final_price, discount = await calculate_price(tariff, promocode)
-        
-        # Сохраняем промокод в state
-        await state.update_data(
-            promocode_id=promocode.id,
-            promocode_code=promocode.code,
-            discount=discount,
-            final_price=final_price
+            payment_id=payment_id,
+            invoice_id=invoice.invoice_id,
+            tariff_id=tariff_id,
+            channel_id=channel["id"]
         )
         
-        await state.set_state(None)
-    
-    # Показываем обновлённую цену
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="💳 Оплатить", callback_data="create_invoice")],
-        [InlineKeyboardButton(text="🗑 Убрать промокод", callback_data="remove_promo")],
-        [InlineKeyboardButton(text="◀️ Назад", callback_data=f"channel:{data['channel_id']}")]
-    ])
-    
-    text = (
-        f"📦 <b>Оформление подписки</b>\n\n"
-        f"📺 Канал: <b>{data['channel_title']}</b>\n"
-        f"📋 Тариф: <b>{data['tariff_name']}</b>\n"
-        f"⏱ Срок: <b>{data['duration_days']} дн.</b>\n\n"
-        f"💰 Цена: <s>${data['original_price']:.2f}</s>\n"
-        f"🎟 Промокод: <b>{code}</b> (-${discount:.2f})\n"
-        f"✅ Итого: <b>${final_price:.2f}</b>"
-    )
-    
-    await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
-
-
-@router.callback_query(F.data == "cancel_promo")
-async def handle_cancel_promo(callback: CallbackQuery, state: FSMContext):
-    """Отмена ввода промокода"""
-    await callback.answer()
-    await state.set_state(None)
-    
-    data = await state.get_data()
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎟 Ввести промокод", callback_data="enter_promo")],
-        [InlineKeyboardButton(text="💳 Оплатить", callback_data="create_invoice")],
-        [InlineKeyboardButton(text="◀️ Назад", callback_data=f"channel:{data['channel_id']}")]
-    ])
-    
-    text = (
-        f"📦 <b>Оформление подписки</b>\n\n"
-        f"📺 Канал: <b>{data['channel_title']}</b>\n"
-        f"📋 Тариф: <b>{data['tariff_name']}</b>\n"
-        f"⏱ Срок: <b>{data['duration_days']} дн.</b>\n"
-        f"💰 Стоимость: <b>${data['original_price']:.2f}</b>"
-    )
-    
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-
-
-@router.callback_query(F.data == "remove_promo")
-async def handle_remove_promo(callback: CallbackQuery, state: FSMContext):
-    """Удаление промокода"""
-    await callback.answer("Промокод удалён")
-    
-    # Очищаем данные промокода
-    await state.update_data(
-        promocode_id=None,
-        promocode_code=None,
-        discount=0,
-        final_price=None
-    )
-    
-    data = await state.get_data()
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎟 Ввести промокод", callback_data="enter_promo")],
-        [InlineKeyboardButton(text="💳 Оплатить", callback_data="create_invoice")],
-        [InlineKeyboardButton(text="◀️ Назад", callback_data=f"channel:{data['channel_id']}")]
-    ])
-    
-    text = (
-        f"📦 <b>Оформление подписки</b>\n\n"
-        f"📺 Канал: <b>{data['channel_title']}</b>\n"
-        f"📋 Тариф: <b>{data['tariff_name']}</b>\n"
-        f"⏱ Срок: <b>{data['duration_days']} дн.</b>\n"
-        f"💰 Стоимость: <b>${data['original_price']:.2f}</b>"
-    )
-    
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-
-
-@router.callback_query(F.data == "create_invoice")
-async def handle_create_invoice(callback: CallbackQuery, state: FSMContext):
-    """Создание инвойса CryptoBot"""
-    await callback.answer("⏳ Создаём счёт...")
-    
-    data = await state.get_data()
-    
-    # Определяем финальную цену
-    final_price = data.get('final_price') or data['original_price']
-    
-    if final_price <= 0:
-        # Если бесплатно (100% скидка) - сразу активируем
-        await activate_free_subscription(callback, state, data)
+    except Exception as e:
+        logger.exception(f"Failed to create invoice: {e}")
+        await callback.message.edit_text(
+            "❌ Ошибка при создании счёта.\n"
+            "Попробуйте позже или обратитесь в поддержку."
+        )
         return
     
-    async with get_session() as session:
-        # Получаем пользователя
-        stmt = select(User).where(User.id == data['user_id'])
-        result = await session.execute(stmt)
-        user = result.scalar_one_or_none()
-        
-        if not user:
-            await callback.message.edit_text("❌ Ошибка: пользователь не найден")
-            return
-        
-        try:
-            # Создаём инвойс в CryptoBot
-            api = await get_cryptobot_api()
-            
-            # Формируем payload для идентификации платежа
-            payload = f"{user.id}:{data['tariff_id']}"
-            if data.get('promocode_id'):
-                payload += f":{data['promocode_id']}"
-            
-            invoice = await api.create_invoice(
-                amount=final_price,
-                asset="USDT",
-                description=f"Подписка на {data['channel_title']} ({data['tariff_name']})",
-                payload=payload,
-                paid_btn_name="callback",
-                paid_btn_url=f"https://t.me/{(await bot.get_me()).username}?start=paid_{data['tariff_id']}",
-                expires_in=3600  # 1 час
-            )
-            
-            # Сохраняем платёж в БД
-            payment = Payment(
-                user_id=user.id,
-                invoice_id=str(invoice.invoice_id),
-                amount=final_price,
-                currency="USDT",
-                status="pending",
-                promocode_id=data.get('promocode_id'),
-                discount_amount=data.get('discount', 0),
-                created_at=datetime.utcnow()
-            )
-            session.add(payment)
-            await session.commit()
-            
-            # Сохраняем ID платежа
-            await state.update_data(payment_id=payment.id, invoice_id=invoice.invoice_id)
-            
-        except Exception as e:
-            logger.exception(f"Failed to create invoice: {e}")
-            await callback.message.edit_text(
-                "❌ Ошибка при создании счёта. Попробуйте позже."
-            )
-            return
-    
     # Показываем кнопку оплаты
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="💳 Оплатить в CryptoBot", url=invoice.pay_url)],
-        [InlineKeyboardButton(text="🔄 Проверить оплату", callback_data=f"check_payment:{invoice.invoice_id}")],
-        [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_payment")]
-    ])
+    keyboard = get_confirm_payment_keyboard(
+        invoice_url=invoice.pay_url,
+        payment_id=payment_id
+    )
     
+    # Формируем текст
     text = (
         f"💳 <b>Счёт на оплату</b>\n\n"
-        f"📺 Канал: <b>{data['channel_title']}</b>\n"
-        f"📋 Тариф: <b>{data['tariff_name']}</b>\n"
-        f"💰 Сумма: <b>${final_price:.2f} USDT</b>\n\n"
-        f"⏱ Счёт действителен 1 час\n\n"
+        f"📺 Канал: <b>{channel['title']}</b>\n"
+        f"📋 Тариф: <b>{tariff['name']}</b>\n"
+        f"⏱ Срок: <b>{tariff['duration_days']} дн.</b>\n"
+    )
+    
+    if discount > 0:
+        text += f"\n💰 Цена: <s>${original_price:.2f}</s>\n"
+        text += f"🎁 Скидка: -${discount:.2f}\n"
+        text += f"✅ Итого: <b>${final_price:.2f} USDT</b>\n"
+    else:
+        text += f"💰 Сумма: <b>${final_price:.2f} USDT</b>\n"
+    
+    text += (
+        f"\n⏱ Счёт действителен 1 час\n\n"
         f"Нажмите кнопку ниже для оплаты через @CryptoBot"
     )
     
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
 
 
-async def activate_free_subscription(callback: CallbackQuery, state: FSMContext, data: dict):
-    """Активация бесплатной подписки (100% скидка)"""
-    from datetime import timedelta
+@router.callback_query(F.data.startswith("promo:"))
+async def handle_enter_promo(callback: CallbackQuery, state: FSMContext):
+    """
+    Запрос ввода промокода
+    Формат callback: promo:{tariff_id}:{channel_id}
+    """
+    await callback.answer()
     
-    async with get_session() as session:
-        # Создаём подписку
-        from ..models import Subscription
-        
-        starts_at = datetime.utcnow()
-        expires_at = starts_at + timedelta(days=data['duration_days'])
-        
-        subscription = Subscription(
-            user_id=data['user_id'],
-            channel_id=data['channel_id'],
-            tariff_id=data['tariff_id'],
-            starts_at=starts_at,
-            expires_at=expires_at,
-            is_active=True,
-            auto_kicked=False
-        )
-        session.add(subscription)
-        
-        # Создаём запись о платеже
-        payment = Payment(
-            user_id=data['user_id'],
-            invoice_id=f"FREE_{datetime.utcnow().timestamp()}",
-            amount=0,
-            currency="USDT",
-            status="paid",
-            promocode_id=data.get('promocode_id'),
-            discount_amount=data['original_price'],
-            paid_at=datetime.utcnow(),
-            created_at=datetime.utcnow()
-        )
-        session.add(payment)
-        
-        # Увеличиваем счётчик промокода
-        if data.get('promocode_id'):
-            stmt = select(Promocode).where(Promocode.id == data['promocode_id'])
-            result = await session.execute(stmt)
-            promocode = result.scalar_one_or_none()
-            if promocode:
-                promocode.used_count += 1
-        
-        await session.commit()
+    parts = callback.data.split(":")
+    tariff_id = int(parts[1])
+    channel_id = int(parts[2]) if len(parts) > 2 else None
     
-    await state.clear()
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📋 Мои подписки", callback_data="my_subscriptions")],
-        [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")]
-    ])
+    # Сохраняем контекст
+    await state.update_data(tariff_id=tariff_id, channel_id=channel_id)
+    await state.set_state(PaymentStates.waiting_promocode)
     
     await callback.message.edit_text(
-        f"✅ <b>Подписка активирована!</b>\n\n"
-        f"📺 Канал: <b>{data['channel_title']}</b>\n"
-        f"📋 Тариф: <b>{data['tariff_name']}</b>\n"
-        f"🎟 Промокод: 100% скидка\n\n"
-        f"Вы будете добавлены в канал в течение минуты.",
-        reply_markup=keyboard,
+        "🎁 <b>Введите промокод:</b>\n\n"
+        "Отправьте код сообщением или нажмите /cancel для отмены",
         parse_mode="HTML"
     )
 
 
+@router.message(PaymentStates.waiting_promocode)
+async def handle_promocode_input(message: Message, state: FSMContext, bot_config: dict):
+    """Обработка введённого промокода"""
+    code = message.text.strip().upper()
+    
+    if code == "/CANCEL":
+        await state.set_state(None)
+        await message.answer("❌ Ввод промокода отменён")
+        return
+    
+    data = await state.get_data()
+    tariff_id = data.get("tariff_id")
+    channel_id = data.get("channel_id")
+    
+    if not tariff_id:
+        await state.set_state(None)
+        await message.answer("❌ Ошибка. Попробуйте выбрать тариф заново.")
+        return
+    
+    # Проверяем промокод
+    is_valid, promocode, error_msg = await validate_promocode(code)
+    
+    if not is_valid:
+        await message.answer(f"❌ {error_msg}")
+        return
+    
+    # Получаем тариф для расчёта скидки
+    tariff = await get_tariff_by_id(tariff_id)
+    if not tariff:
+        await state.set_state(None)
+        await message.answer("❌ Тариф не найден")
+        return
+    
+    # Вычисляем скидку
+    original_price = tariff["price"]
+    discount = 0.0
+    
+    if promocode.get("discount_percent"):
+        discount = original_price * (promocode["discount_percent"] / 100)
+    elif promocode.get("discount_amount"):
+        discount = min(promocode["discount_amount"], original_price)
+    
+    final_price = max(original_price - discount, 0)
+    
+    # Сохраняем промокод в state
+    await state.update_data(
+        promocode=promocode,
+        discount=discount,
+        final_price=final_price
+    )
+    
+    await state.set_state(None)
+    
+    # Получаем канал
+    channel = await get_channel_by_id(tariff["channel_id"])
+    
+    # Формируем клавиатуру
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💳 Оплатить", callback_data=f"pay:{tariff_id}:{channel_id}")],
+        [InlineKeyboardButton(text="🗑 Убрать промокод", callback_data=f"remove_promo:{tariff_id}:{channel_id}")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data=f"channel:{channel_id}")]
+    ])
+    
+    text = (
+        f"📦 <b>Оформление подписки</b>\n\n"
+        f"📺 Канал: <b>{channel['title']}</b>\n"
+        f"📋 Тариф: <b>{tariff['name']}</b>\n"
+        f"⏱ Срок: <b>{tariff['duration_days']} дн.</b>\n\n"
+        f"💰 Цена: <s>${original_price:.2f}</s>\n"
+        f"🎁 Промокод: <b>{code}</b> (-${discount:.2f})\n"
+        f"✅ Итого: <b>${final_price:.2f}</b>"
+    )
+    
+    await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("remove_promo:"))
+async def handle_remove_promo(callback: CallbackQuery, state: FSMContext):
+    """Удаление промокода"""
+    await callback.answer("Промокод удалён")
+    
+    parts = callback.data.split(":")
+    tariff_id = int(parts[1])
+    channel_id = int(parts[2]) if len(parts) > 2 else None
+    
+    # Очищаем данные промокода
+    await state.update_data(
+        promocode=None,
+        discount=0,
+        final_price=None
+    )
+    
+    # Редиректим на выбор тарифа
+    # Имитируем callback на tariff
+    callback.data = f"tariff:{tariff_id}"
+    from .tariffs import select_tariff
+    await select_tariff(callback)
+
+
 @router.callback_query(F.data.startswith("check_payment:"))
-async def handle_check_payment(callback: CallbackQuery, state: FSMContext):
+async def handle_check_payment(callback: CallbackQuery, state: FSMContext, bot_config: dict):
     """Проверка статуса оплаты"""
-    invoice_id = int(callback.data.split(":")[1])
+    payment_id = int(callback.data.split(":")[1])
+    
+    data = await state.get_data()
+    invoice_id = data.get("invoice_id")
+    
+    if not invoice_id:
+        await callback.answer("❌ Счёт не найден", show_alert=True)
+        return
+    
+    cryptobot_token = bot_config.get("cryptobot_token")
+    if not cryptobot_token:
+        await callback.answer("❌ Ошибка конфигурации", show_alert=True)
+        return
     
     try:
-        api = await get_cryptobot_api()
+        api = get_cryptobot_api(cryptobot_token)
         invoice = await api.get_invoice(invoice_id)
         
         if not invoice:
@@ -436,61 +310,23 @@ async def handle_check_payment(callback: CallbackQuery, state: FSMContext):
             return
         
         if invoice.status == "paid":
-            # Оплата прошла - обновляем статус
-            data = await state.get_data()
+            await callback.answer("✅ Оплата прошла!", show_alert=True)
             
-            async with get_session() as session:
-                # Обновляем платёж
-                stmt = select(Payment).where(Payment.invoice_id == str(invoice_id))
-                result = await session.execute(stmt)
-                payment = result.scalar_one_or_none()
-                
-                if payment and payment.status != "paid":
-                    from datetime import timedelta
-                    from ..models import Subscription
-                    
-                    payment.status = "paid"
-                    payment.paid_at = invoice.paid_at or datetime.utcnow()
-                    
-                    # Создаём подписку
-                    starts_at = datetime.utcnow()
-                    expires_at = starts_at + timedelta(days=data['duration_days'])
-                    
-                    subscription = Subscription(
-                        user_id=data['user_id'],
-                        channel_id=data['channel_id'],
-                        tariff_id=data['tariff_id'],
-                        starts_at=starts_at,
-                        expires_at=expires_at,
-                        is_active=True,
-                        auto_kicked=False
-                    )
-                    session.add(subscription)
-                    
-                    await session.flush()
-                    payment.subscription_id = subscription.id
-                    
-                    # Увеличиваем счётчик промокода
-                    if data.get('promocode_id'):
-                        stmt = select(Promocode).where(Promocode.id == data['promocode_id'])
-                        result = await session.execute(stmt)
-                        promocode = result.scalar_one_or_none()
-                        if promocode:
-                            promocode.used_count += 1
-                    
-                    await session.commit()
-            
+            # Очищаем state
+            tariff_id = data.get("tariff_id")
+            channel_id = data.get("channel_id")
             await state.clear()
             
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📋 Мои подписки", callback_data="my_subscriptions")],
-                [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")]
-            ])
+            # Получаем данные для сообщения
+            tariff = await get_tariff_by_id(tariff_id)
+            channel = await get_channel_by_id(channel_id) if channel_id else None
+            
+            keyboard = get_back_to_channels_keyboard()
             
             await callback.message.edit_text(
                 f"✅ <b>Оплата прошла успешно!</b>\n\n"
-                f"📺 Канал: <b>{data['channel_title']}</b>\n"
-                f"📋 Тариф: <b>{data['tariff_name']}</b>\n\n"
+                f"📺 Канал: <b>{channel['title'] if channel else 'Неизвестно'}</b>\n"
+                f"📋 Тариф: <b>{tariff['name'] if tariff else 'Неизвестно'}</b>\n\n"
                 f"Вы будете добавлены в канал в течение минуты.",
                 reply_markup=keyboard,
                 parse_mode="HTML"
@@ -498,15 +334,6 @@ async def handle_check_payment(callback: CallbackQuery, state: FSMContext):
             
         elif invoice.status == "expired":
             await callback.answer("❌ Счёт истёк. Создайте новый.", show_alert=True)
-            
-            # Обновляем статус в БД
-            async with get_session() as session:
-                stmt = select(Payment).where(Payment.invoice_id == str(invoice_id))
-                result = await session.execute(stmt)
-                payment = result.scalar_one_or_none()
-                if payment:
-                    payment.status = "expired"
-                    await session.commit()
         else:
             await callback.answer("⏳ Ожидаем оплату...", show_alert=True)
             
@@ -519,25 +346,9 @@ async def handle_check_payment(callback: CallbackQuery, state: FSMContext):
 async def handle_cancel_payment(callback: CallbackQuery, state: FSMContext):
     """Отмена платежа"""
     await callback.answer()
-    
-    data = await state.get_data()
-    
-    # Обновляем статус платежа
-    if data.get('invoice_id'):
-        async with get_session() as session:
-            stmt = select(Payment).where(Payment.invoice_id == str(data['invoice_id']))
-            result = await session.execute(stmt)
-            payment = result.scalar_one_or_none()
-            if payment and payment.status == "pending":
-                payment.status = "cancelled"
-                await session.commit()
-    
     await state.clear()
     
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📺 К каналам", callback_data="channels")],
-        [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")]
-    ])
+    keyboard = get_back_to_channels_keyboard()
     
     await callback.message.edit_text(
         "❌ Оплата отменена.\n\n"
