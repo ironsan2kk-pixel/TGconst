@@ -1,23 +1,22 @@
 """
-Регистрация всех хендлеров бота
+Обработчики команд и сообщений бота
 """
-from aiogram import Dispatcher
 
-from .start import router as start_router
-from .menu import router as menu_router
-from .channels import router as channels_router
-from .tariffs import router as tariffs_router
+from aiogram import Router
 
+from . import start
+from . import menu
+from . import channels
+from . import tariffs
+from . import payment
 
-def register_all_handlers(dp: Dispatcher):
-    """
-    Регистрация всех роутеров в диспетчере.
-    
-    Args:
-        dp: Диспетчер aiogram
-    """
-    # Порядок важен! Более специфичные хендлеры идут раньше
-    dp.include_router(start_router)
-    dp.include_router(menu_router)
-    dp.include_router(channels_router)
-    dp.include_router(tariffs_router)
+router = Router()
+
+# Подключаем все роутеры
+router.include_router(start.router)
+router.include_router(menu.router)
+router.include_router(channels.router)
+router.include_router(tariffs.router)
+router.include_router(payment.router)
+
+__all__ = ["router"]
