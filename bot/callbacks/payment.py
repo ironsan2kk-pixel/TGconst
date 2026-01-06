@@ -1,5 +1,10 @@
 """
 Callback-обработчики процесса оплаты через CryptoBot.
+
+Поддерживает:
+- Обычную оплату
+- Пробный период (trial)
+- Промокоды
 """
 
 import json
@@ -7,17 +12,23 @@ from datetime import datetime
 
 from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from bot.config import config
-from bot.models import User, Tariff, TariffChannel, Payment
+from bot.models import User, Tariff, TariffChannel, Payment, Promocode
 from bot.keyboards import back_to_menu_keyboard, main_menu_keyboard
 from bot.locales import get_text
 from bot.services.cryptobot import cryptobot, CryptoBotError
-from bot.services.subscription import create_subscription, get_tariff_channels
+from bot.services.subscription import (
+    create_subscription,
+    get_tariff_channels,
+    check_user_has_trial,
+)
 from bot.services.notifications import notify_admins
+from bot.services.promocode import apply_promocode
 
 router = Router()
 
@@ -33,7 +44,7 @@ def payment_keyboard(
     
     buttons = [
         [InlineKeyboardButton(
-            text=_('payment.pay_button').format(amount=amount),
+            text=_('payment.pay_button').format(amount=f"{amount:.2f}"),
             url=pay_url
         )],
         [InlineKeyboardButton(
@@ -67,7 +78,7 @@ def success_keyboard(lang: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-@router.callback_query(F.data.startswith("pay:"))
+@router.callback_query(F.data.startswith("buy:"))
 async def start_payment(
     callback: CallbackQuery,
     session: AsyncSession,
@@ -75,6 +86,7 @@ async def start_payment(
     lang: str,
     _: callable,
     bot: Bot,
+    state: FSMContext,
 ):
     """Начать процесс оплаты."""
     tariff_id = int(callback.data.split(':')[1])
@@ -95,6 +107,25 @@ async def start_payment(
         await callback.answer()
         return
     
+    # Проверяем активный промокод
+    data = await state.get_data()
+    promocode_id = data.get('active_promocode_id')
+    promocode = None
+    discount = 0.0
+    
+    if promocode_id:
+        promocode = await session.get(Promocode, promocode_id)
+        if promocode and promocode.is_valid:
+            # Проверяем применимость к тарифу
+            if promocode.tariff_id is None or promocode.tariff_id == tariff.id:
+                original_price = tariff.price
+                discounted_price = promocode.calculate_discount(original_price)
+                discount = original_price - discounted_price
+    
+    final_amount = tariff.price - discount
+    if final_amount < 0:
+        final_amount = 0
+    
     # Показываем сообщение о создании счёта
     await callback.message.edit_text(_('payment.creating'))
     
@@ -107,10 +138,11 @@ async def start_payment(
             "user_id": user.id,
             "tariff_id": tariff.id,
             "telegram_id": user.telegram_id,
+            "promocode_id": promocode.id if promocode else None,
         })
         
         invoice = await cryptobot.create_invoice(
-            amount=tariff.price,
+            amount=final_amount,
             currency="USDT",
             description=f"Подписка: {tariff_name}",
             payload=payload,
@@ -122,8 +154,9 @@ async def start_payment(
             user_id=user.id,
             tariff_id=tariff.id,
             invoice_id=str(invoice.get("invoice_id")),
-            amount=tariff.price,
+            amount=final_amount,
             original_amount=tariff.price,
+            promocode_id=promocode.id if promocode else None,
             status="pending",
             payment_method="cryptobot",
         )
@@ -134,22 +167,101 @@ async def start_payment(
         # Формируем сообщение
         pay_url = invoice.get("bot_invoice_url") or invoice.get("pay_url")
         
+        discount_text = ""
+        if discount > 0:
+            discount_text = _('payment.discount_applied').format(discount=f"{discount:.2f}")
+        
         text = _('payment.invoice_created').format(
             tariff=tariff_name,
-            amount=tariff.price,
-            discount=""
+            amount=f"{final_amount:.2f}",
+            discount=discount_text
         )
         
         await callback.message.edit_text(
             text,
-            reply_markup=payment_keyboard(pay_url, tariff.price, payment.id, lang)
+            reply_markup=payment_keyboard(pay_url, final_amount, payment.id, lang)
         )
+        
+        # Очищаем промокод из состояния
+        await state.update_data(active_promocode_id=None)
         
     except CryptoBotError as e:
         await callback.message.edit_text(
             f"❌ Ошибка создания счёта: {str(e)}",
             reply_markup=back_to_menu_keyboard(lang)
         )
+    
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("buy_trial:"))
+async def start_trial(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    user: User,
+    lang: str,
+    _: callable,
+    bot: Bot,
+):
+    """Активировать пробный период."""
+    tariff_id = int(callback.data.split(':')[1])
+    
+    # Получаем тариф с каналами
+    stmt = select(Tariff).where(
+        Tariff.id == tariff_id
+    ).options(
+        selectinload(Tariff.tariff_channels).selectinload(TariffChannel.channel)
+    )
+    result = await session.execute(stmt)
+    tariff = result.scalar_one_or_none()
+    
+    if not tariff or not tariff.is_active:
+        await callback.answer(_('error'), show_alert=True)
+        return
+    
+    if not tariff.trial_days or tariff.trial_days <= 0:
+        await callback.answer("Trial не доступен для этого тарифа", show_alert=True)
+        return
+    
+    # Проверяем, использовал ли юзер уже trial
+    already_used = await check_user_has_trial(session, user.id, tariff.id)
+    if already_used:
+        await callback.answer("Вы уже использовали пробный период для этого тарифа", show_alert=True)
+        return
+    
+    # Создаём подписку
+    subscription = await create_subscription(
+        session=session,
+        user=user,
+        tariff=tariff,
+        is_trial=True,
+    )
+    
+    # Получаем каналы
+    channels = await get_tariff_channels(session, tariff)
+    
+    tariff_name = tariff.name_ru if lang == 'ru' else tariff.name_en
+    
+    # Формируем текст
+    expires_str = subscription.expires_at.strftime("%d.%m.%Y %H:%M") if subscription.expires_at else "∞"
+    
+    text = (
+        f"🎁 <b>Пробный период активирован!</b>\n\n"
+        f"📦 Тариф: {tariff_name}\n"
+        f"⏱ Активен до: {expires_str}\n\n"
+        f"🔗 Ссылки на каналы отправлены ниже."
+    )
+    
+    await callback.message.edit_text(text, reply_markup=success_keyboard(lang))
+    
+    # Отправляем ссылки на каналы
+    for channel in channels:
+        if channel.invite_link:
+            channel_text = _('payment.channel_link').format(
+                title=channel.title,
+                link=channel.invite_link
+            )
+            await bot.send_message(callback.message.chat.id, channel_text)
     
     await callback.answer()
 
@@ -304,6 +416,17 @@ async def process_successful_payment(
     
     if not tariff:
         return
+    
+    # Применяем промокод (записываем использование)
+    if payment.promocode_id:
+        promocode = await session.get(Promocode, payment.promocode_id)
+        if promocode:
+            await apply_promocode(
+                session=session,
+                promocode=promocode,
+                user=user,
+                payment_id=payment.id,
+            )
     
     # Создаём подписку
     subscription = await create_subscription(
