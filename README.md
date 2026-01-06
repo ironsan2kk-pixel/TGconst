@@ -1,401 +1,112 @@
-# 🤖 Telegram Bot Constructor
+# 🤖 Telegram Channel Bot
 
-Веб-приложение для создания Telegram-ботов, которые продают доступ к приватным каналам через криптовалюту (CryptoBot).
+Telegram-бот для продажи доступа к приватным каналам через криптовалюту (CryptoBot/USDT).
 
 ## ✨ Возможности
 
-- 📱 **Создание ботов через админ-панель** — без написания кода
-- 💰 **Приём оплаты через CryptoBot** — криптовалютные платежи
-- 🔐 **Автоматическое добавление** — в приватный канал после оплаты
-- ⏰ **Проверка подписок** — автоматический кик по истечении срока
-- 🎟️ **Промокоды** — скидки и акции
-- 📣 **Массовые рассылки** — по всем пользователям бота
-- 🗄️ **Изолированные данные** — отдельная SQLite база для каждого бота
+- 📺 **Пакеты каналов** — один тариф = доступ к нескольким каналам
+- 💳 **CryptoBot оплата** — USDT через CryptoBot API
+- 🌐 **Два языка** — русский и английский с переключением
+- 🎁 **Промокоды** — скидки процентом или фиксированной суммой
+- ⏱️ **Пробный период** — опционально для каждого тарифа
+- 🔗 **Deep Links** — прямые ссылки на тарифы
+- 📊 **Админ-панель** — React с тёмной темой и графиками
+- 🛠️ **Конструктор меню** — настройка кнопок бота
+- 📨 **Рассылки** — фильтры по подписке и языку
+- 🔔 **Уведомления** — о новых юзерах и оплатах
 
 ## 🏗️ Архитектура
 
 ```
-┌─────────────────────────────────────────────┐
-│           АДМИН-ПАНЕЛЬ (React)              │
-└─────────────────────┬───────────────────────┘
-                      │ REST API
-                      ▼
-┌─────────────────────────────────────────────┐
-│             BACKEND (FastAPI)               │
-│  main.db │ Оркестратор ботов │ CryptoBot    │
-└─────────────────────┬───────────────────────┘
-                      │
-      ┌───────────────┼───────────────┐
-      ▼               ▼               ▼
-┌───────────┐   ┌───────────┐   ┌───────────┐
-│  Bot #1   │   │  Bot #2   │   │  Bot #N   │
-│  bot.db   │   │  bot.db   │   │  bot.db   │
-└───────────┘   └───────────┘   └───────────┘
-                      │
-                      ▼
-              ┌───────────────┐
-              │   USERBOT     │
-              │  (Pyrogram)   │
-              └───────────────┘
+┌────────────────────────────────────────────────┐
+│          АДМИН-ПАНЕЛЬ (React)                  │
+│  🌓 Тёмная тема │ 📊 Графики │ 📋 CRUD        │
+└────────────────────────┬───────────────────────┘
+                         │ REST API
+                         ▼
+┌────────────────────────────────────────────────┐
+│               BACKEND (FastAPI)                │
+│  ┌──────────────────────────────────────────┐  │
+│  │           bot.db (SQLite)                │  │
+│  └──────────────────────────────────────────┘  │
+└────────────────────────┬───────────────────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+    ┌──────────┐  ┌───────────┐  ┌───────────┐
+    │ TELEGRAM │  │ CRYPTOBOT │  │  USERBOT  │
+    │   BOT    │  │    API    │  │ (Pyrogram)│
+    │ (Aiogram)│  │  Платежи  │  │  Инвайты  │
+    └──────────┘  └───────────┘  └───────────┘
 ```
 
-## 📋 Требования
+## 🚀 Быстрый старт (Windows)
 
-### Системные требования
-- **OS:** Ubuntu 20.04+ / Debian 11+
-- **RAM:** Минимум 1GB (рекомендуется 2GB+)
-- **CPU:** 1 vCPU (рекомендуется 2+)
-- **Диск:** 10GB+
-
-### Программное обеспечение
-- Python 3.10+
-- Node.js 18+ (для frontend)
-- Nginx (для production)
-- Supervisor (для управления процессами)
-
-## 🚀 Быстрый старт
-
-### 1. Клонирование репозитория
-
-```bash
-git clone https://github.com/your-username/TGconst.git
+```cmd
+:: 1. Клонировать репозиторий
+git clone https://github.com/ironsan2kk-pixel/TGconst.git
 cd TGconst
+
+:: 2. Установка
+install.bat
+
+:: 3. Настроить .env
+:: Открыть .env и заполнить BOT_TOKEN, ADMIN_IDS
+
+:: 4. Запустить админку
+start_admin.bat
 ```
-
-### 2. Автоматическая установка
-
-```bash
-chmod +x scripts/install.sh
-./scripts/install.sh
-```
-
-### 3. Ручная установка (альтернатива)
-
-```bash
-# Создание виртуального окружения
-python3 -m venv venv
-source venv/bin/activate
-
-# Установка зависимостей Python
-pip install -r requirements.txt
-
-# Установка зависимостей frontend
-cd frontend && npm install && cd ..
-
-# Настройка окружения
-cp .env.example .env
-nano .env  # Отредактируйте настройки
-
-# Создание админа
-python scripts/create_admin.py
-```
-
-## ⚙️ Конфигурация
-
-### Файл .env
-
-```env
-# === APP ===
-DEBUG=false
-SECRET_KEY=ваш-секретный-ключ-32-символа
-
-# === PATHS ===
-DATA_DIR=./data
-MAIN_DB_PATH=./data/main.db
-
-# === JWT ===
-JWT_SECRET_KEY=ваш-jwt-секрет
-JWT_ALGORITHM=HS256
-JWT_EXPIRE_MINUTES=1440
-
-# === ADMIN ===
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=ваш-надежный-пароль
-
-# === USERBOT (Pyrogram) ===
-USERBOT_API_ID=12345678
-USERBOT_API_HASH=your_api_hash
-USERBOT_PHONE=+79001234567
-USERBOT_SESSION_STRING=
-
-# === SERVER ===
-BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
-FRONTEND_URL=https://your-domain.com
-WEBHOOK_BASE_URL=https://your-domain.com
-```
-
-### Получение Telegram API credentials
-
-1. Перейдите на https://my.telegram.org
-2. Войдите в аккаунт
-3. Перейдите в "API development tools"
-4. Создайте приложение
-5. Скопируйте `api_id` и `api_hash`
-
-### Генерация Pyrogram session
-
-```bash
-source venv/bin/activate
-python scripts/generate_session.py
-```
-
-Следуйте инструкциям, введите код из Telegram. Полученную строку сессии добавьте в `.env` как `USERBOT_SESSION_STRING`.
-
-## 🏃 Запуск
-
-### Development режим
-
-```bash
-# Terminal 1: Backend
-source venv/bin/activate
-python backend/run.py
-
-# Terminal 2: Userbot
-source venv/bin/activate
-python userbot/run.py
-
-# Terminal 3: Frontend
-cd frontend
-npm run dev
-```
-
-### Production режим
-
-#### 1. Сборка frontend
-
-```bash
-cd frontend
-npm run build
-```
-
-#### 2. Настройка Supervisor
-
-```bash
-# Копирование конфигов
-sudo cp scripts/supervisor/*.conf /etc/supervisor/conf.d/
-
-# Редактирование путей (замените на свои)
-sudo nano /etc/supervisor/conf.d/backend.conf
-sudo nano /etc/supervisor/conf.d/userbot.conf
-
-# Применение
-sudo supervisorctl reread
-sudo supervisorctl update
-```
-
-#### 3. Настройка Nginx
-
-```bash
-# Копирование конфига
-sudo cp nginx.conf /etc/nginx/sites-available/bot-constructor
-
-# Редактирование (замените your-domain.com)
-sudo nano /etc/nginx/sites-available/bot-constructor
-
-# Активация
-sudo ln -s /etc/nginx/sites-available/bot-constructor /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-#### 4. Получение SSL сертификата
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
-
-## 📖 Использование
-
-### Создание бота
-
-1. Откройте админ-панель: `https://your-domain.com`
-2. Войдите с учётными данными админа
-3. Перейдите в раздел "Боты" → "Создать бота"
-4. Введите:
-   - Название бота
-   - Токен Telegram бота (от @BotFather)
-   - Токен CryptoBot (от @CryptoBot)
-   - Приветственное сообщение
-5. Нажмите "Создать"
-
-### Добавление канала
-
-1. Откройте настройки бота
-2. Перейдите в "Каналы" → "Добавить канал"
-3. Введите:
-   - ID канала (например: -1001234567890)
-   - Username (если есть)
-   - Название
-4. **Важно:** Добавьте userbot-аккаунт как администратора канала с правом добавления участников
-
-### Создание тарифов
-
-1. Выберите канал
-2. Перейдите в "Тарифы" → "Добавить тариф"
-3. Введите:
-   - Название (например: "1 месяц")
-   - Цена в USD
-   - Срок в днях
-
-### Промокоды
-
-1. Перейдите в "Промокоды" → "Создать промокод"
-2. Введите:
-   - Код (например: SAVE20)
-   - Скидка (% или фиксированная сумма)
-   - Лимит использований (опционально)
-   - Срок действия (опционально)
-
-### Рассылки
-
-1. Перейдите в "Рассылки" → "Создать рассылку"
-2. Введите текст сообщения
-3. Прикрепите фото (опционально)
-4. Нажмите "Запустить"
-
-## 🔧 Управление
-
-### Supervisor команды
-
-```bash
-# Статус всех процессов
-sudo supervisorctl status
-
-# Перезапуск backend
-sudo supervisorctl restart bot-constructor-backend
-
-# Перезапуск userbot
-sudo supervisorctl restart bot-constructor-userbot
-
-# Логи
-sudo tail -f /var/log/supervisor/backend.log
-sudo tail -f /var/log/supervisor/userbot.log
-```
-
-### Обновление проекта
-
-```bash
-cd /opt/telegram-bot-constructor
-git pull
-
-source venv/bin/activate
-pip install -r requirements.txt
-
-cd frontend && npm install && npm run build && cd ..
-
-sudo supervisorctl restart all
-```
-
-## 🐛 Troubleshooting
-
-### Бот не запускается
-
-1. Проверьте токен бота через @BotFather
-2. Проверьте логи: `sudo tail -f /var/log/supervisor/backend.log`
-3. Убедитесь, что бот не запущен где-то ещё
-
-### Userbot не добавляет в канал
-
-1. Проверьте, что userbot — администратор канала
-2. Проверьте права: возможность добавлять участников
-3. Проверьте логи: `sudo tail -f /var/log/supervisor/userbot.log`
-4. Возможно, FloodWait — подождите и попробуйте снова
-
-### Ошибки оплаты
-
-1. Проверьте токен CryptoBot
-2. Убедитесь, что WEBHOOK_BASE_URL доступен извне
-3. Проверьте SSL сертификат
-4. Проверьте логи backend
-
-### Фронтенд не открывается
-
-1. Проверьте сборку: `cd frontend && npm run build`
-2. Проверьте конфиг nginx
-3. Проверьте права на папку dist
 
 ## 📁 Структура проекта
 
 ```
-telegram-bot-constructor/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # API endpoints
-│   │   ├── models/       # SQLAlchemy models
-│   │   ├── schemas/      # Pydantic schemas
-│   │   ├── services/     # Business logic
-│   │   └── utils/        # Helpers
-│   └── bot_template/     # Шаблон Telegram бота
-├── userbot/              # Pyrogram userbot
-├── frontend/             # React админка
-├── scripts/              # Скрипты установки
-├── data/                 # Базы данных
-│   ├── main.db
-│   └── bots/{uuid}/bot.db
-├── nginx.conf            # Конфиг nginx
-├── requirements.txt
-└── .env
+telegram-channel-bot/
+├── bot/                    # Telegram бот (Aiogram 3)
+│   ├── models/             # SQLAlchemy модели
+│   ├── handlers/           # Обработчики команд
+│   ├── keyboards/          # Клавиатуры
+│   ├── middlewares/        # Middleware
+│   ├── services/           # Бизнес-логика
+│   └── locales/            # Локализация
+├── userbot/                # Pyrogram userbot
+├── admin/                  # Backend API (FastAPI)
+│   ├── api/                # Эндпоинты
+│   └── schemas/            # Pydantic схемы
+├── frontend/               # React админка
+├── data/                   # База данных
+├── scripts/                # Утилиты
+└── *.bat                   # Windows скрипты
 ```
 
-## 🛡️ Безопасность
+## 🛠️ Технологии
 
-### Рекомендации
+| Компонент | Технология |
+|-----------|------------|
+| Backend API | FastAPI |
+| ORM | SQLAlchemy 2.0 + aiosqlite |
+| Telegram Bot | Aiogram 3 |
+| Userbot | Pyrogram |
+| Frontend | React + Tailwind CSS |
+| Графики | Recharts |
 
-1. **Используйте сильные пароли** для админки и .env
-2. **Ограничьте доступ** к серверу по SSH (только по ключу)
-3. **Настройте firewall** (ufw):
-   ```bash
-   sudo ufw allow ssh
-   sudo ufw allow http
-   sudo ufw allow https
-   sudo ufw enable
-   ```
-4. **Регулярно обновляйте** систему и зависимости
-5. **Делайте бэкапы** папки data/
+## 📋 .bat файлы
 
-### Бэкап
+| Файл | Описание |
+|------|----------|
+| `install.bat` | Установка (venv, pip, БД) |
+| `start_bot.bat` | Запуск Telegram бота |
+| `start_admin.bat` | Запуск админ-панели |
+| `start_userbot.bat` | Запуск Pyrogram userbot |
+| `start_frontend.bat` | Запуск React dev server |
+| `start_all.bat` | Запуск всех компонентов |
+| `stop_all.bat` | Остановка всех процессов |
 
-```bash
-# Создание бэкапа
-tar -czvf backup-$(date +%Y%m%d).tar.gz data/
+## 📖 Документация
 
-# Восстановление
-tar -xzvf backup-20240101.tar.gz
-```
-
-## 🔗 API Reference
-
-API документация доступна по адресам:
-- Swagger UI: `https://your-domain.com/docs`
-- ReDoc: `https://your-domain.com/redoc`
-
-### Основные endpoints
-
-| Method | Endpoint | Описание |
-|--------|----------|----------|
-| POST | /api/auth/login | Авторизация |
-| GET | /api/auth/me | Текущий пользователь |
-| GET | /api/bots | Список ботов |
-| POST | /api/bots | Создать бота |
-| POST | /api/bots/{uuid}/start | Запустить бота |
-| POST | /api/bots/{uuid}/stop | Остановить бота |
-| GET | /api/bots/{uuid}/channels | Каналы бота |
-| GET | /api/bots/{uuid}/promocodes | Промокоды |
-| POST | /api/bots/{uuid}/broadcasts | Создать рассылку |
+- [MASTER_PLAN.md](MASTER_PLAN.md) — полное описание проекта
+- [CHECKLIST.md](CHECKLIST.md) — чек-лист разработки
+- [CLAUDE_INSTRUCTION.md](CLAUDE_INSTRUCTION.md) — инструкция для Claude
 
 ## 📄 Лицензия
 
 MIT License
-
-## 🤝 Поддержка
-
-При возникновении проблем:
-1. Проверьте раздел Troubleshooting
-2. Изучите логи
-3. Создайте Issue на GitHub
-
----
-
-**Made with ❤️ for Telegram Bot Creators**
