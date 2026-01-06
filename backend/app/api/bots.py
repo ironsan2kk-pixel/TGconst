@@ -362,3 +362,50 @@ async def get_bot_status(
         process_pid=bot.process_pid,
         message=status_msg
     )
+
+
+@router.post(
+    "/subscriptions/check",
+    summary="Проверить подписки",
+    description="Немедленная проверка всех подписок во всех ботах"
+)
+async def check_subscriptions(
+    current_admin: CurrentAdmin
+) -> dict:
+    """
+    Выполнить немедленную проверку подписок.
+    
+    Проверяет все активные боты:
+    - Кикает пользователей с истёкшими подписками
+    - Отправляет уведомления тем, у кого подписка истекает через 1 день
+    """
+    from ..services.subscription_checker import get_subscription_checker
+    
+    checker = get_subscription_checker()
+    result = await checker.check_now()
+    
+    return {
+        "success": True,
+        "message": "Проверка завершена",
+        "result": result
+    }
+
+
+@router.get(
+    "/subscriptions/checker-status",
+    summary="Статус проверки подписок",
+    description="Получить статус фоновой задачи проверки подписок"
+)
+async def get_subscription_checker_status(
+    current_admin: CurrentAdmin
+) -> dict:
+    """Получить статус subscription checker"""
+    from ..services.subscription_checker import get_subscription_checker
+    
+    checker = get_subscription_checker()
+    
+    return {
+        "is_running": checker.is_running,
+        "check_interval_seconds": 300,
+        "notify_before_days": 1
+    }
