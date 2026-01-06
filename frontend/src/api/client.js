@@ -99,6 +99,8 @@ export const broadcastsAPI = {
 
 // Menu Builder
 export const menuAPI = {
+  getTemplates: () => api.get('/menu/templates'),
+  applyTemplate: (templateId, clearExisting = true) => api.post(`/menu/templates/${templateId}/apply?clear_existing=${clearExisting}`),
   getAll: () => api.get('/menu'),
   getById: (id) => api.get(`/menu/${id}`),
   create: (data) => api.post('/menu', data),
@@ -131,4 +133,5 @@ export const backupAPI = {
 }
 
 export default api
+
 
