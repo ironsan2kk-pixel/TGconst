@@ -477,13 +477,45 @@ npm run dev
 ---
 
 ## ЭТАП 15: Деплой и документация
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Задачи:
-- [ ] scripts/install.sh
-- [ ] supervisor конфиги
-- [ ] nginx.conf
-- [ ] README.md
+- [x] scripts/install.sh
+- [x] supervisor конфиги (backend.conf, userbot.conf)
+- [x] nginx.conf
+- [x] README.md
+
+### Созданные файлы:
+```
+scripts/
+├── install.sh                  # Автоматическая установка
+└── supervisor/
+    ├── backend.conf            # Конфиг supervisor для backend
+    └── userbot.conf            # Конфиг supervisor для userbot
+
+nginx.conf                      # Конфиг nginx с SSL
+README.md                       # Полная документация
+```
+
+### Проверка:
+```bash
+# На VPS:
+chmod +x scripts/install.sh
+./scripts/install.sh
+
+# Настройка supervisor
+sudo cp scripts/supervisor/*.conf /etc/supervisor/conf.d/
+sudo supervisorctl reread
+sudo supervisorctl update
+
+# Настройка nginx
+sudo cp nginx.conf /etc/nginx/sites-available/bot-constructor
+sudo ln -s /etc/nginx/sites-available/bot-constructor /etc/nginx/sites-enabled/
+sudo certbot --nginx -d your-domain.com
+sudo nginx -t && sudo systemctl reload nginx
+
+# https://your-domain.com → работает!
+```
 
 ---
 
@@ -505,15 +537,44 @@ npm run dev
 | 12 | Шаблон бота — Промокоды и рассылки | ✅ |
 | 13 | Оркестратор ботов | ✅ |
 | 14 | Админка — Frontend | ✅ |
-| 15 | Деплой и документация | ⬜ |
+| 15 | Деплой и документация | ✅ |
 
 **Легенда:** ⬜ Не начат | ✅ Готово
 
-**Прогресс:** 14/15 этапов (93%)
+**Прогресс:** 15/15 этапов (100%) 🎉
 
 ---
 
-## 🚀 ПРОДОЛЖЕНИЕ
+## 🎉 ПРОЕКТ ЗАВЕРШЁН!
 
-Напиши **"Этап 15"** для продолжения работы.
+Все 15 этапов выполнены. Система готова к деплою.
+
+### Финальная структура:
+```
+telegram-bot-constructor/
+├── backend/                # FastAPI backend + Bot template
+├── userbot/                # Pyrogram userbot
+├── frontend/               # React admin panel
+├── scripts/
+│   ├── install.sh          # Автоустановка
+│   ├── create_admin.py
+│   ├── generate_session.py
+│   └── supervisor/
+│       ├── backend.conf
+│       └── userbot.conf
+├── data/                   # SQLite databases
+├── nginx.conf              # Production nginx config
+├── requirements.txt
+├── .env.example
+├── README.md               # Полная документация
+├── MASTER_PLAN.md
+└── CHECKLIST.md
+```
+
+### Деплой:
+1. `./scripts/install.sh`
+2. Настроить `.env`
+3. Скопировать supervisor конфиги
+4. Настроить nginx + SSL
+5. Готово! 🚀
 
