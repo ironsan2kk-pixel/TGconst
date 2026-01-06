@@ -1,7 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './hooks/useAuth'
 import Layout from './components/Layout'
-import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import BotList from './pages/Bots/BotList'
 import BotCreate from './pages/Bots/BotCreate'
@@ -19,30 +17,15 @@ import BroadcastList from './pages/Broadcasts/BroadcastList'
 import BroadcastCreate from './pages/Broadcasts/BroadcastCreate'
 import BroadcastView from './pages/Broadcasts/BroadcastView'
 
-function PrivateRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-  
-  return isAuthenticated ? children : <Navigate to="/login" />
-}
+// Авторизация отключена - прямой доступ к панели
 
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      {/* Редирект с логина на главную */}
+      <Route path="/login" element={<Navigate to="/" />} />
       
-      <Route path="/" element={
-        <PrivateRoute>
-          <Layout />
-        </PrivateRoute>
-      }>
+      <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         
         {/* Боты */}
