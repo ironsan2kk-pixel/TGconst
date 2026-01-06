@@ -19,7 +19,7 @@ from admin.schemas.user import (
 )
 from bot.models import User, Subscription, Payment, Tariff
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter()
 
 
 async def _build_user_response(session: AsyncSession, user: User) -> UserResponse:
