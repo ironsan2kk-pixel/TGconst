@@ -53,7 +53,29 @@ class MenuItemReorder(BaseModel):
 
 
 class MenuItemResponse(BaseModel):
-    """Menu item response schema."""
+    """Menu item response schema with children."""
+    id: int
+    parent_id: int | None
+    type: str
+    system_action: str | None
+    text_ru: str
+    text_en: str | None
+    icon: str | None
+    value: str | None
+    photo_file_id: str | None
+    visibility: str
+    visibility_language: str
+    sort_order: int
+    is_active: bool
+    created_at: datetime | None = None
+    children: list["MenuItemResponse"] = []
+
+    class Config:
+        from_attributes = True
+
+
+class MenuItemFlatResponse(BaseModel):
+    """Menu item response schema without children."""
     id: int
     parent_id: int | None
     type: str
@@ -71,6 +93,17 @@ class MenuItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MenuTreeResponse(BaseModel):
+    """Response with menu tree."""
+    items: list[MenuItemResponse]
+
+
+class MenuItemListResponse(BaseModel):
+    """Response with menu items list."""
+    items: list[MenuItemFlatResponse]
+    total: int
 
 
 # === Menu Templates ===
