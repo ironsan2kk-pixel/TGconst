@@ -19,7 +19,7 @@ export default function Subscriptions() {
     setLoading(true)
     try {
       const response = await subscriptionsAPI.getAll()
-      setSubscriptions(response.data)
+      const data = response.data.items || response.data; setSubscriptions(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading subscriptions:', error)
     } finally {
