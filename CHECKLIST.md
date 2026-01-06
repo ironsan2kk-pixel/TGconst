@@ -25,7 +25,7 @@
 |---|------|--------|
 | 1 | Структура проекта | ✅ Готов |
 | 2 | База данных — Модели | ✅ Готов |
-| 3 | Backend API — Auth | ⬜ |
+| 3 | Backend API — Auth | ✅ |
 | 4 | Backend API — CRUD ботов | ⬜ |
 | 5 | Backend API — Каналы и тарифы | ⬜ |
 | 6 | Backend API — Промокоды | ⬜ |
@@ -111,17 +111,17 @@ scripts/
 ---
 
 ## ЭТАП 3: Backend API — Auth
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Задачи:
-- [ ] backend/app/utils/__init__.py
-- [ ] backend/app/utils/security.py (hash_password, verify_password, create_token, decode_token)
-- [ ] backend/app/schemas/__init__.py
-- [ ] backend/app/schemas/auth.py (LoginRequest, TokenResponse, AdminResponse)
-- [ ] backend/app/api/__init__.py
-- [ ] backend/app/api/deps.py (get_db, get_current_admin)
-- [ ] backend/app/api/auth.py (login, me)
-- [ ] Подключить роутер в main.py
+- [x] backend/app/utils/__init__.py
+- [x] backend/app/utils/security.py (hash_password, verify_password, create_token, decode_token)
+- [x] backend/app/schemas/__init__.py
+- [x] backend/app/schemas/auth.py (LoginRequest, TokenResponse, AdminResponse)
+- [x] backend/app/api/__init__.py
+- [x] backend/app/api/deps.py (get_db, get_current_admin)
+- [x] backend/app/api/auth.py (login, me)
+- [x] Подключить роутер в main.py
 
 ### Эндпоинты:
 - [ ] POST /api/auth/login → {"access_token": "..."}
