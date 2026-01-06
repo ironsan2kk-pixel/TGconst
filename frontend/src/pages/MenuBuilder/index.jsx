@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Save, Trash2, GripVertical } from 'lucide-react'
+import { Plus, Save, Trash2, GripVertical, FileDown, Layout } from 'lucide-react'
 import { Modal, ConfirmDialog, DragDropTree, MenuItemForm, MenuPreview } from '../../components'
 import { menuAPI } from '../../api/client'
 
@@ -8,11 +8,14 @@ export default function MenuBuilder() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false)
+  const [templates, setTemplates] = useState([])
   const [selectedItem, setSelectedItem] = useState(null)
   const [parentId, setParentId] = useState(null)
 
   useEffect(() => {
     loadMenu()
+    loadTemplates()
   }, [])
 
   const loadMenu = async () => {
@@ -24,6 +27,27 @@ export default function MenuBuilder() {
       console.error('Error loading menu:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadTemplates = async () => {
+    try {
+      const response = await menuAPI.getTemplates()
+      setTemplates(response.data.items || [])
+    } catch (error) {
+      console.error('Error loading templates:', error)
+    }
+  }
+
+  const handleApplyTemplate = async (templateId) => {
+    if (!confirm('Применить шаблон? Текущее меню будет заменено.')) return
+    
+    try {
+      await menuAPI.applyTemplate(templateId, true)
+      setIsTemplatesOpen(false)
+      loadMenu()
+    } catch (error) {
+      console.error('Error applying template:', error)
     }
   }
 
@@ -114,10 +138,19 @@ export default function MenuBuilder() {
             Настройка главного меню бота
           </p>
         </div>
-        <button onClick={() => openAddModal()} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Добавить пункт
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsTemplatesOpen(true)} 
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Layout className="w-4 h-4" />
+            Шаблоны
+          </button>
+          <button onClick={() => openAddModal()} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Добавить пункт
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -125,9 +158,17 @@ export default function MenuBuilder() {
         <div className="card p-6">
           <h3 className="text-lg font-semibold mb-4">Структура меню</h3>
           {treeData.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              Меню пустое. Добавьте первый пункт.
-            </p>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">
+                Меню пустое. Добавьте пункт или выберите шаблон.
+              </p>
+              <button 
+                onClick={() => setIsTemplatesOpen(true)}
+                className="btn-secondary"
+              >
+                Выбрать шаблон
+              </button>
+            </div>
           ) : (
             <DragDropTree
               items={treeData}
@@ -166,6 +207,45 @@ export default function MenuBuilder() {
             setParentId(null)
           }}
         />
+      </Modal>
+
+      {/* Templates Modal */}
+      <Modal
+        isOpen={isTemplatesOpen}
+        onClose={() => setIsTemplatesOpen(false)}
+        title="Выберите шаблон"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Шаблоны содержат готовую структуру меню. При применении текущее меню будет заменено.
+          </p>
+          <div className="grid gap-4">
+            {templates.map((template) => (
+              <div 
+                key={template.id}
+                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-500 cursor-pointer transition-colors"
+                onClick={() => handleApplyTemplate(template.id)}
+              >
+                <h4 className="font-semibold text-lg">{template.name}</h4>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                  {template.description_ru}
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {template.items_count} пунктов меню
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end pt-4">
+            <button 
+              onClick={() => setIsTemplatesOpen(false)}
+              className="btn-secondary"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Delete Confirm */}
