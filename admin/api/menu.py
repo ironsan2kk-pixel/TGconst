@@ -201,7 +201,7 @@ async def apply_menu_template(
     # Create menu items from template
     created_items = []
     for item_data in template["items"]:
-        children = item_data.pop("children", [])
+        children = item_data.get("children", [])
         
         item = MenuItem(
             parent_id=None,
@@ -433,4 +433,5 @@ async def duplicate_menu_item(
     await session.refresh(new_item)
     
     return _build_menu_item_response(new_item, [])
+
 
