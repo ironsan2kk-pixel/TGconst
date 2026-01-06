@@ -193,3 +193,85 @@ def support_keyboard(support_url: str, lang: str) -> InlineKeyboardMarkup:
     
     builder.adjust(1)
     return builder.as_markup()
+
+
+def renew_subscription_keyboard(tariff_id: int, lang: str) -> InlineKeyboardMarkup:
+    """Клавиатура продления подписки."""
+    builder = InlineKeyboardBuilder()
+    
+    _ = lambda key: get_text(key, lang)
+    
+    # Кнопка продления
+    builder.button(
+        text=_('subscription.renew_button'),
+        callback_data=f"buy:{tariff_id}"
+    )
+    
+    # В меню
+    builder.button(
+        text=_('menu.back'),
+        callback_data="menu:main"
+    )
+    
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def subscriptions_keyboard(
+    subscriptions: list,
+    lang: str,
+) -> InlineKeyboardMarkup:
+    """Список подписок пользователя."""
+    builder = InlineKeyboardBuilder()
+    
+    _ = lambda key: get_text(key, lang)
+    
+    for sub in subscriptions:
+        tariff = sub.tariff
+        name = tariff.name_ru if lang == 'ru' else tariff.name_en
+        
+        if sub.expires_at:
+            expires = sub.expires_at.strftime('%d.%m.%Y')
+            text = f"📺 {name} (до {expires})"
+        else:
+            text = f"📺 {name} (∞)"
+        
+        builder.button(
+            text=text,
+            callback_data=f"subscription:{sub.id}"
+        )
+    
+    # Назад
+    builder.button(
+        text=_('menu.back'),
+        callback_data="menu:main"
+    )
+    
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def subscription_detail_keyboard(
+    subscription,
+    lang: str,
+) -> InlineKeyboardMarkup:
+    """Детали подписки."""
+    builder = InlineKeyboardBuilder()
+    
+    _ = lambda key: get_text(key, lang)
+    
+    # Продлить (если истекает)
+    if subscription.expires_at:
+        builder.button(
+            text=_('subscription.renew_button'),
+            callback_data=f"buy:{subscription.tariff_id}"
+        )
+    
+    # Назад к списку
+    builder.button(
+        text=_('subscription.back_to_list'),
+        callback_data="menu:subscriptions"
+    )
+    
+    builder.adjust(1)
+    return builder.as_markup()
