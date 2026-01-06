@@ -4,7 +4,7 @@
 
 from aiogram import Router
 
-from bot.handlers import start, menu, language, tariffs
+from bot.handlers import start, menu, language, tariffs, payment
 
 
 def setup_handlers() -> Router:
@@ -16,5 +16,6 @@ def setup_handlers() -> Router:
     router.include_router(menu.router)
     router.include_router(language.router)
     router.include_router(tariffs.router)
+    router.include_router(payment.router)
     
     return router
