@@ -1,140 +1,167 @@
 import { useState, useEffect } from 'react'
-import { Check, X, Eye, Plus, Download } from 'lucide-react'
-import { DataTable, Modal, ConfirmDialog, ExportButton, downloadBlob } from '../../components'
-
-// Mock data
-const mockPayments = [
-  { id: 1, user_name: 'Иван П.', tariff_name: 'Премиум', amount: 25, original_amount: 25, status: 'paid', payment_method: 'cryptobot', created_at: '2024-01-15 12:30' },
-  { id: 2, user_name: 'Anna K.', tariff_name: 'VIP', amount: 99, original_amount: 99, status: 'paid', payment_method: 'cryptobot', created_at: '2024-01-20 14:45' },
-  { id: 3, user_name: 'Сергей М.', tariff_name: 'Базовый', amount: 10, original_amount: 10, status: 'pending', payment_method: 'cryptobot', invoice_id: 'INV123', created_at: '2024-02-01 09:15' },
-  { id: 4, user_name: 'Maria L.', tariff_name: 'Премиум', amount: 20, original_amount: 25, status: 'paid', payment_method: 'manual', promocode: 'SAVE20', created_at: '2024-02-05 16:00' },
-]
-
-const mockTariffs = [
-  { id: 1, name_ru: 'Базовый', price: 10 },
-  { id: 2, name_ru: 'Премиум', price: 25 },
-  { id: 3, name_ru: 'VIP', price: 99 },
-]
-
-const mockUsers = [
-  { id: 1, name: 'Иван П.', telegram_id: 123456789 },
-  { id: 2, name: 'Anna K.', telegram_id: 987654321 },
-]
+import { Eye, CheckCircle, Plus } from 'lucide-react'
+import { DataTable, Modal, ExportButton } from '../../components'
+import { paymentsAPI, usersAPI, tariffsAPI } from '../../api/client'
 
 export default function Payments() {
-  const [payments, setPayments] = useState(mockPayments)
-  const [loading, setLoading] = useState(false)
-  const [exporting, setExporting] = useState(false)
-  
-  const [viewModal, setViewModal] = useState({ open: false, payment: null })
-  const [manualModal, setManualModal] = useState(false)
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, payment: null })
-  
-  const [manualForm, setManualForm] = useState({
-    user_id: '',
-    tariff_id: '',
-    amount: ''
-  })
+  const [payments, setPayments] = useState([])
+  const [users, setUsers] = useState([])
+  const [tariffs, setTariffs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedPayment, setSelectedPayment] = useState(null)
+  const [isViewOpen, setIsViewOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [createData, setCreateData] = useState({ user_id: '', tariff_id: '', amount: '' })
 
-  const handleConfirmPayment = async () => {
-    try {
-      setPayments(payments.map(p => 
-        p.id === confirmDialog.payment.id 
-          ? { ...p, status: 'paid', payment_method: 'manual' } 
-          : p
-      ))
-      setConfirmDialog({ open: false, payment: null })
-    } catch (error) {
-      console.error('Failed to confirm:', error)
-    }
-  }
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  const handleCreateManual = async (e) => {
-    e.preventDefault()
+  const loadData = async () => {
+    setLoading(true)
     try {
-      const newPayment = {
-        id: Date.now(),
-        user_name: mockUsers.find(u => u.id === parseInt(manualForm.user_id))?.name || 'Unknown',
-        tariff_name: mockTariffs.find(t => t.id === parseInt(manualForm.tariff_id))?.name_ru || 'Unknown',
-        amount: parseFloat(manualForm.amount),
-        original_amount: parseFloat(manualForm.amount),
-        status: 'paid',
-        payment_method: 'manual',
-        created_at: new Date().toLocaleString('ru-RU')
-      }
-      setPayments([newPayment, ...payments])
-      setManualModal(false)
-      setManualForm({ user_id: '', tariff_id: '', amount: '' })
+      const [paymentsRes, usersRes, tariffsRes] = await Promise.all([
+        paymentsAPI.getAll(),
+        usersAPI.getAll(),
+        tariffsAPI.getAll()
+      ])
+      setPayments(paymentsRes.data)
+      setUsers(usersRes.data)
+      setTariffs(tariffsRes.data)
     } catch (error) {
-      console.error('Failed to create manual payment:', error)
-    }
-  }
-
-  const handleExport = async () => {
-    try {
-      setExporting(true)
-      const csv = 'id,user,tariff,amount,status,method,date\n' + 
-        payments.map(p => `${p.id},"${p.user_name}","${p.tariff_name}",${p.amount},${p.status},${p.payment_method},"${p.created_at}"`).join('\n')
-      const blob = new Blob([csv], { type: 'text/csv' })
-      downloadBlob(blob, 'payments.csv')
-    } catch (error) {
-      console.error('Failed to export:', error)
+      console.error('Error loading data:', error)
     } finally {
-      setExporting(false)
+      setLoading(false)
+    }
+  }
+
+  const handleConfirm = async (payment) => {
+    try {
+      await paymentsAPI.confirm(payment.id)
+      loadData()
+    } catch (error) {
+      console.error('Error confirming payment:', error)
+    }
+  }
+
+  const handleCreateManual = async () => {
+    try {
+      await paymentsAPI.createManual({
+        user_id: parseInt(createData.user_id),
+        tariff_id: parseInt(createData.tariff_id),
+        amount: parseFloat(createData.amount)
+      })
+      setIsCreateOpen(false)
+      setCreateData({ user_id: '', tariff_id: '', amount: '' })
+      loadData()
+    } catch (error) {
+      console.error('Error creating payment:', error)
     }
   }
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case 'paid': return <span className="badge badge-success">✓ Оплачен</span>
-      case 'pending': return <span className="badge badge-warning">⏳ Ожидает</span>
-      case 'expired': return <span className="badge badge-danger">✗ Истёк</span>
-      case 'cancelled': return <span className="badge badge-danger">✗ Отменён</span>
-      default: return <span className="badge badge-info">{status}</span>
+    const styles = {
+      pending: 'badge-yellow',
+      paid: 'badge-green',
+      expired: 'badge-red',
+      cancelled: 'badge-red',
+      manual: 'badge-blue'
     }
+    const labels = {
+      pending: 'Ожидает',
+      paid: 'Оплачен',
+      expired: 'Истёк',
+      cancelled: 'Отменён',
+      manual: 'Вручную'
+    }
+    return <span className={styles[status]}>{labels[status]}</span>
+  }
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleString('ru-RU')
   }
 
   const columns = [
-    { key: 'id', label: 'ID' },
-    { key: 'user_name', label: 'Пользователь' },
-    { key: 'tariff_name', label: 'Тариф' },
+    { key: 'id', label: 'ID', sortable: true },
+    { 
+      key: 'user', 
+      label: 'Пользователь',
+      render: (_, row) => row.user?.username ? `@${row.user.username}` : row.user?.first_name || `ID: ${row.user_id}`
+    },
+    { 
+      key: 'tariff', 
+      label: 'Тариф',
+      render: (_, row) => row.tariff?.name_ru || `ID: ${row.tariff_id}`
+    },
     { 
       key: 'amount', 
       label: 'Сумма',
-      render: (val, row) => (
+      sortable: true,
+      render: (value, row) => (
         <span>
-          ${val}
-          {row.original_amount !== val && (
-            <span className="text-xs text-gray-500 line-through ml-1">${row.original_amount}</span>
+          {row.original_amount && row.original_amount !== value && (
+            <span className="text-gray-400 line-through mr-1">${row.original_amount}</span>
           )}
+          <span className="font-medium">${value}</span>
         </span>
       )
     },
     { 
       key: 'status', 
       label: 'Статус',
-      render: (val) => getStatusBadge(val)
+      render: (value) => getStatusBadge(value)
     },
     { 
       key: 'payment_method', 
       label: 'Метод',
-      render: (val) => val === 'cryptobot' ? '🤖 CryptoBot' : '✋ Вручную'
+      render: (value) => value === 'cryptobot' ? '💰 CryptoBot' : '✋ Вручную'
     },
-    { key: 'created_at', label: 'Дата' }
+    { 
+      key: 'created_at', 
+      label: 'Дата',
+      render: formatDate
+    }
   ]
+
+  const actions = [
+    {
+      icon: Eye,
+      label: 'Детали',
+      onClick: (row) => {
+        setSelectedPayment(row)
+        setIsViewOpen(true)
+      }
+    },
+    {
+      icon: CheckCircle,
+      label: 'Подтвердить',
+      onClick: handleConfirm,
+      className: 'text-green-600 hover:text-green-700',
+      show: (row) => row.status === 'pending'
+    }
+  ]
+
+  const totalRevenue = payments
+    .filter(p => p.status === 'paid' || p.status === 'manual')
+    .reduce((sum, p) => sum + p.amount, 0)
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Платежи</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Всего: ${payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+          <h1 className="text-2xl font-bold">Платежи</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Всего: {payments.length} | Выручка: ${totalRevenue.toFixed(2)}
           </p>
         </div>
-        <div className="flex gap-3">
-          <ExportButton onClick={handleExport} loading={exporting} />
-          <button onClick={() => setManualModal(true)} className="btn btn-primary flex items-center gap-2">
+        <div className="flex gap-2">
+          <ExportButton
+            data={payments}
+            filename="payments"
+            columns={['id', 'user_id', 'tariff_id', 'amount', 'status', 'payment_method', 'created_at']}
+          />
+          <button onClick={() => setIsCreateOpen(true)} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Создать вручную
           </button>
@@ -142,162 +169,126 @@ export default function Payments() {
       </div>
 
       <DataTable
-        columns={columns}
         data={payments}
-        searchable={true}
-        searchKeys={['user_name', 'tariff_name']}
-        actions={(row) => (
-          <>
-            <button
-              onClick={() => setViewModal({ open: true, payment: row })}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
-              title="Подробнее"
-            >
-              <Eye className="w-4 h-4" />
-            </button>
-            {row.status === 'pending' && (
-              <button
-                onClick={() => setConfirmDialog({ open: true, payment: row })}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-green-500"
-                title="Подтвердить оплату"
-              >
-                <Check className="w-4 h-4" />
-              </button>
-            )}
-          </>
-        )}
+        columns={columns}
+        actions={actions}
+        loading={loading}
       />
 
       {/* View Modal */}
       <Modal
-        isOpen={viewModal.open}
-        onClose={() => setViewModal({ open: false, payment: null })}
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
         title="Детали платежа"
       >
-        {viewModal.payment && (
-          <div className="space-y-3">
+        {selectedPayment && (
+          <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500">ID платежа</p>
-                <p className="font-medium">{viewModal.payment.id}</p>
+                <span className="text-gray-500">ID:</span>
+                <span className="ml-2 font-medium">{selectedPayment.id}</span>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Статус</p>
-                {getStatusBadge(viewModal.payment.status)}
+                <span className="text-gray-500">Статус:</span>
+                <span className="ml-2">{getStatusBadge(selectedPayment.status)}</span>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Пользователь</p>
-                <p className="font-medium">{viewModal.payment.user_name}</p>
+                <span className="text-gray-500">Сумма:</span>
+                <span className="ml-2 font-medium">${selectedPayment.amount}</span>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Тариф</p>
-                <p className="font-medium">{viewModal.payment.tariff_name}</p>
+                <span className="text-gray-500">Метод:</span>
+                <span className="ml-2">{selectedPayment.payment_method}</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Сумма</p>
-                <p className="font-medium">${viewModal.payment.amount}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Метод</p>
-                <p className="font-medium">{viewModal.payment.payment_method}</p>
-              </div>
-              {viewModal.payment.invoice_id && (
+              {selectedPayment.invoice_id && (
                 <div className="col-span-2">
-                  <p className="text-sm text-gray-500">Invoice ID</p>
-                  <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    {viewModal.payment.invoice_id}
-                  </code>
+                  <span className="text-gray-500">Invoice ID:</span>
+                  <span className="ml-2 font-mono text-xs">{selectedPayment.invoice_id}</span>
                 </div>
               )}
-              {viewModal.payment.promocode && (
-                <div>
-                  <p className="text-sm text-gray-500">Промокод</p>
-                  <p className="font-medium">{viewModal.payment.promocode}</p>
+              {selectedPayment.promocode_id && (
+                <div className="col-span-2">
+                  <span className="text-gray-500">Промокод:</span>
+                  <span className="ml-2">ID: {selectedPayment.promocode_id}</span>
                 </div>
               )}
+              <div>
+                <span className="text-gray-500">Создан:</span>
+                <span className="ml-2">{formatDate(selectedPayment.created_at)}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Оплачен:</span>
+                <span className="ml-2">{formatDate(selectedPayment.paid_at)}</span>
+              </div>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Manual Payment Modal */}
+      {/* Create Manual Modal */}
       <Modal
-        isOpen={manualModal}
-        onClose={() => setManualModal(false)}
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
         title="Создать платёж вручную"
       >
-        <form onSubmit={handleCreateManual} className="space-y-4">
+        <div className="space-y-4">
           <div>
             <label className="label">Пользователь</label>
             <select
-              value={manualForm.user_id}
-              onChange={(e) => setManualForm({ ...manualForm, user_id: e.target.value })}
+              value={createData.user_id}
+              onChange={(e) => setCreateData({ ...createData, user_id: e.target.value })}
               className="input"
-              required
             >
-              <option value="">Выберите пользователя...</option>
-              {mockUsers.map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
+              <option value="">Выберите пользователя</option>
+              {users.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.username ? `@${u.username}` : u.first_name} (ID: {u.telegram_id})
+                </option>
               ))}
             </select>
           </div>
-          
           <div>
             <label className="label">Тариф</label>
             <select
-              value={manualForm.tariff_id}
+              value={createData.tariff_id}
               onChange={(e) => {
-                const tariff = mockTariffs.find(t => t.id === parseInt(e.target.value))
-                setManualForm({ 
-                  ...manualForm, 
+                const tariff = tariffs.find(t => t.id === parseInt(e.target.value))
+                setCreateData({ 
+                  ...createData, 
                   tariff_id: e.target.value,
-                  amount: tariff?.price.toString() || ''
+                  amount: tariff ? tariff.price.toString() : ''
                 })
               }}
               className="input"
-              required
             >
-              <option value="">Выберите тариф...</option>
-              {mockTariffs.map(t => (
+              <option value="">Выберите тариф</option>
+              {tariffs.map(t => (
                 <option key={t.id} value={t.id}>{t.name_ru} (${t.price})</option>
               ))}
             </select>
           </div>
-          
           <div>
             <label className="label">Сумма (USDT)</label>
             <input
               type="number"
               step="0.01"
-              min="0"
-              value={manualForm.amount}
-              onChange={(e) => setManualForm({ ...manualForm, amount: e.target.value })}
+              value={createData.amount}
+              onChange={(e) => setCreateData({ ...createData, amount: e.target.value })}
               className="input"
-              required
             />
           </div>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setManualModal(false)} className="btn btn-secondary">
-              Отмена
-            </button>
-            <button type="submit" className="btn btn-success">
-              Создать и активировать
-            </button>
-          </div>
-        </form>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button onClick={() => setIsCreateOpen(false)} className="btn-secondary">Отмена</button>
+          <button 
+            onClick={handleCreateManual} 
+            className="btn-primary"
+            disabled={!createData.user_id || !createData.tariff_id || !createData.amount}
+          >
+            Создать
+          </button>
+        </div>
       </Modal>
-
-      {/* Confirm Dialog */}
-      <ConfirmDialog
-        isOpen={confirmDialog.open}
-        onClose={() => setConfirmDialog({ open: false, payment: null })}
-        onConfirm={handleConfirmPayment}
-        title="Подтвердить оплату"
-        message={`Подтвердить оплату $${confirmDialog.payment?.amount} от ${confirmDialog.payment?.user_name}?`}
-        variant="success"
-        confirmText="Подтвердить"
-      />
     </div>
   )
 }
