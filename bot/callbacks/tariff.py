@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from bot.models import User, Tariff
 from bot.keyboards import back_to_menu_keyboard
 from bot.locales import get_text
+from bot.services.cryptobot import cryptobot
 
 router = Router()
 
@@ -21,7 +22,7 @@ async def buy_tariff(
     lang: str,
     _: callable,
 ):
-    """Начать покупку тарифа."""
+    """Начать покупку тарифа — перенаправляем на оплату."""
     tariff_id = int(callback.data.split(':')[1])
     
     # Получаем тариф
@@ -31,13 +32,23 @@ async def buy_tariff(
         await callback.answer(_('error'), show_alert=True)
         return
     
-    # Полная реализация оплаты в Чат 3
-    # Пока показываем сообщение
-    await callback.message.edit_text(
-        _('payment.cryptobot_disabled'),
-        reply_markup=back_to_menu_keyboard(lang)
-    )
-    await callback.answer()
+    # Проверяем настроен ли CryptoBot
+    if not cryptobot.is_configured:
+        await callback.message.edit_text(
+            _('payment.cryptobot_disabled'),
+            reply_markup=back_to_menu_keyboard(lang)
+        )
+        await callback.answer()
+        return
+    
+    # Меняем callback_data на pay: и пересылаем в payment handler
+    callback.data = f"pay:{tariff_id}"
+    
+    # Импортируем и вызываем handler оплаты
+    from bot.callbacks.payment import start_payment
+    from bot.loader import bot
+    
+    await start_payment(callback, session, user, lang, _, bot)
 
 
 @router.callback_query(F.data.startswith("buy_trial:"))
