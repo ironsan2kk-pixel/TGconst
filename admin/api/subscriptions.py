@@ -18,7 +18,7 @@ from admin.schemas.subscription import (
 )
 from bot.models import Subscription, User, Tariff
 
-router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
+router = APIRouter()
 
 
 async def _build_subscription_response(
