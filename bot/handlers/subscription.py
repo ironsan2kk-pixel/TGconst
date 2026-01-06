@@ -2,6 +2,8 @@
 Хендлеры для просмотра подписок пользователя.
 """
 
+from typing import Callable, Optional
+
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -117,7 +119,6 @@ async def show_subscription_detail(
         status = _('subscriptions.status_trial')
     elif subscription.expires_at:
         from datetime import datetime
-from typing import Callable
         now = datetime.utcnow()
         days_left = (subscription.expires_at - now).days
         if days_left <= 3:
