@@ -79,57 +79,57 @@
 ```cmd
 install.bat
 start_admin.bat
-:: http://localhost:8001/health → {"status": "ok", "database": "connected"}
+:: http://localhost:8000/health → {"status": "ok"}
 ```
 
 ---
 
 ## ЧАТ 2: Telegram бот — Ядро
-**Статус:** ⬜ Не начат
+**Статус:** ✅ Готово
 
 ### Локализация:
-- [ ] `bot/locales/__init__.py` — get_text()
-- [ ] `bot/locales/ru.py` — все тексты RU
-- [ ] `bot/locales/en.py` — все тексты EN
+- [x] `bot/locales/__init__.py` — get_text()
+- [x] `bot/locales/ru.py` — все тексты RU
+- [x] `bot/locales/en.py` — все тексты EN
 
 ### Конфигурация и Loader:
-- [ ] `bot/__init__.py`, `bot/config.py`
-- [ ] `bot/loader.py` — Bot, Dispatcher
+- [x] `bot/__init__.py`, `bot/config.py`
+- [x] `bot/loader.py` — Bot, Dispatcher
 
 ### Middleware:
-- [ ] `bot/middlewares/__init__.py`
-- [ ] `bot/middlewares/database.py` — сессия БД
-- [ ] `bot/middlewares/user.py` — регистрация юзера + уведомление админам
-- [ ] `bot/middlewares/i18n.py` — определение языка
-- [ ] `bot/middlewares/ban.py` — проверка бана
-- [ ] `bot/middlewares/rate_limit.py` — лимит 30/мин
+- [x] `bot/middlewares/__init__.py`
+- [x] `bot/middlewares/database.py` — сессия БД
+- [x] `bot/middlewares/user.py` — регистрация юзера + уведомление админам
+- [x] `bot/middlewares/i18n.py` — определение языка
+- [x] `bot/middlewares/ban.py` — проверка бана
+- [x] `bot/middlewares/rate_limit.py` — лимит 30/мин
 
 ### Клавиатуры:
-- [ ] `bot/keyboards/__init__.py`, `bot/keyboards/inline.py`
-- [ ] language_keyboard(), main_menu_keyboard()
-- [ ] tariffs_keyboard(), tariff_detail_keyboard()
+- [x] `bot/keyboards/__init__.py`, `bot/keyboards/inline.py`
+- [x] language_keyboard(), main_menu_keyboard()
+- [x] tariffs_keyboard(), tariff_detail_keyboard()
 
 ### Handlers:
-- [ ] `bot/handlers/__init__.py`
-- [ ] `bot/handlers/start.py` — /start, deep links
-- [ ] `bot/handlers/menu.py` — главное меню
-- [ ] `bot/handlers/language.py` — смена языка
-- [ ] `bot/handlers/tariffs.py` — список и детали тарифов
+- [x] `bot/handlers/__init__.py`
+- [x] `bot/handlers/start.py` — /start, deep links
+- [x] `bot/handlers/menu.py` — главное меню
+- [x] `bot/handlers/language.py` — смена языка
+- [x] `bot/handlers/tariffs.py` — список и детали тарифов
 
 ### Callbacks:
-- [ ] `bot/callbacks/__init__.py`
-- [ ] `bot/callbacks/language.py`
-- [ ] `bot/callbacks/tariff.py`
+- [x] `bot/callbacks/__init__.py`
+- [x] `bot/callbacks/language.py`
+- [x] `bot/callbacks/tariff.py`
 
 ### Сервисы:
-- [ ] `bot/services/__init__.py`
-- [ ] `bot/services/notifications.py` — notify_admins()
+- [x] `bot/services/__init__.py`
+- [x] `bot/services/notifications.py` — notify_admins()
 
 ### Точка входа:
-- [ ] `bot/run.py`
+- [x] `bot/run.py`
 
 ### Windows .bat:
-- [ ] `start_bot.bat`
+- [x] `start_bot.bat`
 
 ### Проверка:
 ```cmd
@@ -285,7 +285,7 @@ start_userbot.bat
 ### Проверка:
 ```cmd
 start_admin.bat
-:: http://localhost:8001/docs — Swagger работает
+:: http://localhost:8000/docs — Swagger работает
 ```
 
 ---
@@ -343,7 +343,7 @@ cd frontend && npm install && npm run dev
 | # | Чат | Статус | Описание |
 |---|-----|--------|----------|
 | 1 | Структура и БД | ✅ | Папки, модели, FastAPI |
-| 2 | Бот — Ядро | ⬜ | /start, меню, тарифы, i18n |
+| 2 | Бот — Ядро | ✅ | /start, меню, тарифы, i18n |
 | 3 | CryptoBot | ⬜ | Оплата, webhook |
 | 4 | Userbot + Подписки | ⬜ | Инвайт, кик, проверка |
 | 5 | Фичи бота | ⬜ | Промокоды, админ, trial, **меню, FAQ** |
@@ -353,19 +353,19 @@ cd frontend && npm install && npm run dev
 
 **Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
-**Прогресс:** 1/8 чатов (12.5%)
+**Прогресс:** 2/8 чатов (25%)
 
 ---
 
 ## 🚀 СТАРТ
 
-1. Напиши **"Чат 2"**
+1. Напиши **"Чат 3"**
 2. Claude делает всё из списка
 3. Claude выгружает в GitHub
 4. Ты проверяешь
-5. Пишешь **"Чат 3"** или замечания
+5. Пишешь **"Чат 4"** или замечания
 6. Повторяем до конца
 
 ---
 
-**Чат 1 выполнен! Жду команду "Чат 2"!**
+**Готов. Жду команду "Чат 3"!**
