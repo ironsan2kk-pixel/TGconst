@@ -1,5 +1,5 @@
 """
-Обработка главного меню.
+Обработка статического меню (fallback если БД пустая).
 """
 
 from aiogram import Router, F
@@ -15,29 +15,8 @@ from bot.locales import get_text
 router = Router()
 
 
-@router.callback_query(F.data == "menu:main")
-async def menu_main(
-    callback: CallbackQuery,
-    session: AsyncSession,
-    user: User,
-    lang: str,
-    _: callable,
-):
-    """Возврат в главное меню."""
-    # Проверяем наличие активной подписки
-    result = await session.execute(
-        select(Subscription).where(
-            Subscription.user_id == user.id,
-            Subscription.is_active == True
-        )
-    )
-    has_subscription = result.scalar_one_or_none() is not None
-    
-    await callback.message.edit_text(
-        _('menu.title'),
-        reply_markup=main_menu_keyboard(lang, has_subscription)
-    )
-    await callback.answer()
+# Примечание: обработчик menu:main теперь в menu_navigation.py
+# Здесь оставляем только вспомогательные обработчики
 
 
 @router.callback_query(F.data == "menu:language")
@@ -78,14 +57,15 @@ async def menu_subscriptions(
     _: callable,
 ):
     """Показать подписки пользователя."""
-    # Будет реализовано в Чат 5
-    from bot.keyboards import back_to_menu_keyboard
+    from bot.keyboards import back_to_menu_keyboard, subscriptions_keyboard
+    from bot.models import Tariff
+    from sqlalchemy.orm import selectinload
     
     result = await session.execute(
         select(Subscription).where(
             Subscription.user_id == user.id,
             Subscription.is_active == True
-        )
+        ).options(selectinload(Subscription.tariff))
     )
     subscriptions = result.scalars().all()
     
@@ -95,26 +75,33 @@ async def menu_subscriptions(
             reply_markup=back_to_menu_keyboard(lang)
         )
     else:
-        # Формируем список подписок (базовая реализация)
-        text = _('subscriptions.title') + '\n\n'
-        
-        for sub in subscriptions:
-            if sub.expires_at:
-                expires = sub.expires_at.strftime('%d.%m.%Y')
-                text += _('subscriptions.item', 
-                         tariff=f"Тариф #{sub.tariff_id}",
-                         expires=expires,
-                         channels_count=0) + '\n\n'
-            else:
-                text += _('subscriptions.item_forever',
-                         tariff=f"Тариф #{sub.tariff_id}",
-                         channels_count=0) + '\n\n'
-        
         await callback.message.edit_text(
-            text,
-            reply_markup=back_to_menu_keyboard(lang)
+            _('subscriptions.title'),
+            reply_markup=subscriptions_keyboard(subscriptions, lang)
         )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu:tariffs")
+async def menu_tariffs(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    lang: str,
+    _: callable,
+):
+    """Показать тарифы."""
+    from bot.models import Tariff
+    from bot.keyboards import tariffs_keyboard
     
+    result = await session.execute(
+        select(Tariff).where(Tariff.is_active == True).order_by(Tariff.sort_order)
+    )
+    tariffs = result.scalars().all()
+    
+    await callback.message.edit_text(
+        _('tariffs.title'),
+        reply_markup=tariffs_keyboard(tariffs, lang)
+    )
     await callback.answer()
 
 
@@ -125,7 +112,6 @@ async def menu_promocode(
     _: callable,
 ):
     """Показать ввод промокода."""
-    # Будет реализовано в Чат 5
     from bot.keyboards import back_to_menu_keyboard
     
     await callback.message.edit_text(
