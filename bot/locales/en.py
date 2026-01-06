@@ -94,7 +94,43 @@ TEXTS = {
         ),
         'item_trial': ' (trial period)',
         'expiring_soon': '⚠️ Expiring soon!',
+        'detail': (
+            '📦 <b>{tariff}</b>\n\n'
+            '📅 Started: {starts}\n'
+            '⏱ Expires: {expires}\n'
+            '📺 Channels: {channels_count}\n'
+            '{status}'
+        ),
+        'status_active': '✅ Active',
+        'status_trial': '🎁 Trial period',
+        'status_expiring': '⚠️ Expiring soon',
     },
+    
+    # Subscription (для уведомлений)
+    'subscription': {
+        'renew_button': '🔄 Renew Subscription',
+        'back_to_list': '◀️ Back to Subscriptions',
+    },
+    
+    # Уведомления о подписках
+    'subscription_expires_3days': (
+        '⏰ <b>Reminder</b>\n\n'
+        'Your subscription "{tariff_name}" expires in 3 days.\n'
+        '📅 Expiration date: {expires_at}\n\n'
+        '👇 Renew your subscription to keep access.'
+    ),
+    'subscription_expires_1day': (
+        '⚠️ <b>Attention!</b>\n\n'
+        'Your subscription "{tariff_name}" expires tomorrow!\n'
+        '📅 Expiration date: {expires_at}\n\n'
+        '👇 Renew your subscription now.'
+    ),
+    'subscription_expired': (
+        '❌ <b>Subscription Expired</b>\n\n'
+        'Your subscription "{tariff_name}" has ended.\n'
+        'Access to channels has been revoked.\n\n'
+        '👇 Purchase a new subscription to regain access.'
+    ),
     
     # Promo codes
     'promocode': {
@@ -106,7 +142,7 @@ TEXTS = {
         'limit_reached': '❌ Promo code usage limit reached',
     },
     
-    # Notifications
+    # Notifications (старые, для совместимости)
     'notifications': {
         'subscription_expires_3days': (
             '⏰ <b>Reminder</b>\n\n'
