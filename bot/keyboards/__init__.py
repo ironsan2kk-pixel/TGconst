@@ -10,6 +10,7 @@ from bot.keyboards.inline import (
     back_to_menu_keyboard,
     payment_keyboard,
     support_keyboard,
+    dynamic_menu_keyboard,
 )
 
 
@@ -21,4 +22,5 @@ __all__ = [
     'back_to_menu_keyboard',
     'payment_keyboard',
     'support_keyboard',
+    'dynamic_menu_keyboard',
 ]
