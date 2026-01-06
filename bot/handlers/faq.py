@@ -2,7 +2,7 @@
 Хендлеры FAQ (вопросы-ответы).
 """
 
-from typing import Callable, Optional
+from typing import Callable
 
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
