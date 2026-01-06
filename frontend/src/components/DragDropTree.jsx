@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { ChevronRight, ChevronDown, GripVertical, Plus, Edit2, Trash2 } from 'lucide-react'
 
-// Simple tree without react-beautiful-dnd for now
 export default function DragDropTree({ 
-  items, 
+  items = [], 
   onEdit, 
   onDelete, 
   onAdd,
-  onMove 
+  onReorder 
 }) {
   const [expandedIds, setExpandedIds] = useState(new Set())
 
@@ -21,11 +20,6 @@ export default function DragDropTree({
       }
       return next
     })
-  }
-
-  const getChildren = (parentId) => {
-    return items.filter(item => item.parent_id === parentId)
-      .sort((a, b) => a.sort_order - b.sort_order)
   }
 
   const getTypeIcon = (type) => {
@@ -59,12 +53,13 @@ export default function DragDropTree({
   }
 
   const renderItem = (item, level = 0) => {
-    const children = getChildren(item.id)
+    // items is already a tree structure with children property
+    const children = item.children || []
     const hasChildren = children.length > 0
     const isExpanded = expandedIds.has(item.id)
 
     return (
-      <div key={item.id} className="animate-fadeIn">
+      <div key={item.id}>
         <div 
           className={`
             flex items-center gap-2 px-3 py-2 rounded-lg
@@ -97,11 +92,11 @@ export default function DragDropTree({
           {/* Name */}
           <div className="flex-1 min-w-0">
             <p className="font-medium text-gray-900 dark:text-white truncate">
-              {item.text_ru}
+              {item.text_ru || 'Без названия'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {getTypeLabel(item.type, item.system_action)}
-              {item.visibility !== 'all' && (
+              {item.visibility && item.visibility !== 'all' && (
                 <span className="ml-2">
                   • {item.visibility === 'subscribed' ? '👑 Подписчики' : '🆓 Без подписки'}
                 </span>
@@ -113,7 +108,7 @@ export default function DragDropTree({
           <div className="flex items-center gap-1">
             {item.type === 'section' && (
               <button
-                onClick={() => onAdd(item.id)}
+                onClick={() => onAdd && onAdd(item.id)}
                 className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500"
                 title="Добавить вложенный"
               >
@@ -121,14 +116,14 @@ export default function DragDropTree({
               </button>
             )}
             <button
-              onClick={() => onEdit(item)}
+              onClick={() => onEdit && onEdit(item)}
               className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-500"
               title="Редактировать"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
-              onClick={() => onDelete(item)}
+              onClick={() => onDelete && onDelete(item)}
               className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-red-500"
               title="Удалить"
             >
@@ -147,33 +142,31 @@ export default function DragDropTree({
     )
   }
 
-  const rootItems = getChildren(null)
+  if (!items || items.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <p>Меню пустое</p>
+        <button 
+          onClick={() => onAdd && onAdd(null)}
+          className="mt-2 btn-primary"
+        >
+          <Plus className="w-4 h-4 inline mr-2" />
+          Добавить элемент
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-1">
-      {rootItems.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <p>Меню пустое</p>
-          <button 
-            onClick={() => onAdd(null)}
-            className="mt-2 btn btn-primary"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить элемент
-          </button>
-        </div>
-      ) : (
-        <>
-          {rootItems.map(item => renderItem(item))}
-          <button 
-            onClick={() => onAdd(null)}
-            className="w-full mt-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors"
-          >
-            <Plus className="w-4 h-4 inline mr-2" />
-            Добавить в корень
-          </button>
-        </>
-      )}
+      {items.map(item => renderItem(item))}
+      <button 
+        onClick={() => onAdd && onAdd(null)}
+        className="w-full mt-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-500 transition-colors"
+      >
+        <Plus className="w-4 h-4 inline mr-2" />
+        Добавить в корень
+      </button>
     </div>
   )
 }
