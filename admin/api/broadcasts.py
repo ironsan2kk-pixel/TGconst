@@ -39,7 +39,7 @@ from bot.services.broadcast import (
 )
 from bot.loader import bot
 
-router = APIRouter(prefix="/broadcasts", tags=["broadcasts"])
+router = APIRouter()
 
 
 def broadcast_to_response(broadcast: Broadcast) -> BroadcastResponse:
