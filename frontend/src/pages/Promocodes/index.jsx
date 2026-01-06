@@ -27,7 +27,7 @@ export default function Promocodes() {
     setLoading(true)
     try {
       const response = await promocodesAPI.getAll()
-      setPromocodes(response.data)
+      const data = response.data.items || response.data; setPromocodes(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading promocodes:', error)
     } finally {
