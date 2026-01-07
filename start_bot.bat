@@ -2,25 +2,33 @@
 chcp 65001 > nul
 cd /d "%~dp0"
 
-echo ========================================
-echo   Запуск Telegram бота
-echo ========================================
+echo ════════════════════════════════════════════
+echo   Telegram Channel Bot - Bot
+echo ════════════════════════════════════════════
 echo.
 
+:: Check venv
 if not exist "venv\Scripts\activate.bat" (
-    echo [ОШИБКА] Виртуальное окружение не найдено!
-    echo Сначала запустите install.bat
+    echo ❌ Virtual environment not found!
+    echo Run install.bat first.
     pause
     exit /b 1
 )
 
+:: Check .env
+if not exist ".env" (
+    echo ❌ .env file not found!
+    echo Copy .env.example to .env and configure it.
+    pause
+    exit /b 1
+)
+
+:: Activate venv
 call venv\Scripts\activate.bat
 
-echo [INFO] Запуск бота...
+:: Start bot
+echo 🤖 Starting Telegram bot...
 echo.
-
 python -m bot.run
 
-echo.
-echo [INFO] Бот остановлен
 pause
