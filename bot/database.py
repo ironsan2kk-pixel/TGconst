@@ -1,43 +1,32 @@
 """Database connection and session management."""
 
-import os
-from pathlib import Path
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from .models import Base
-
-
-# Get database path from environment or use default
-DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/bot.db")
-
-# Ensure data directory exists
-db_path = Path(DATABASE_PATH)
-db_path.parent.mkdir(parents=True, exist_ok=True)
-
-# Create async engine
-DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_PATH}"
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=os.getenv("DEBUG", "false").lower() == "true",
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
 )
 
-# Create session factory
-async_session = async_sessionmaker(
+from bot.config import config
+from bot.models import Base
+
+
+# Create async engine
+engine = create_async_engine(
+    config.database_url,
+    echo=config.debug,
+    future=True,
+)
+
+# Session factory
+async_session_factory = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
+    autoflush=False,
 )
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Get database session."""
-    async with async_session() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
 
 
 async def init_db() -> None:
@@ -49,3 +38,28 @@ async def init_db() -> None:
 async def close_db() -> None:
     """Close database connection."""
     await engine.dispose()
+
+
+@asynccontextmanager
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """Get async database session."""
+    async with async_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency for FastAPI."""
+    async with async_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
