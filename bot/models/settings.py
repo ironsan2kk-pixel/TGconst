@@ -1,10 +1,10 @@
-"""Settings model - key-value storage."""
+"""Settings model for key-value storage."""
 
 from datetime import datetime
 from sqlalchemy import String, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from bot.models.base import Base
 
 
 class Settings(Base):
@@ -13,7 +13,7 @@ class Settings(Base):
     __tablename__ = "settings"
     
     key: Mapped[str] = mapped_column(String(100), primary_key=True)
-    value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    value: Mapped[str] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=func.now(),
