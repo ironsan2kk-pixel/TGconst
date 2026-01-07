@@ -2,59 +2,72 @@
 chcp 65001 > nul
 cd /d "%~dp0"
 
-echo ========================================
-echo   Установка Telegram Channel Bot
-echo ========================================
+echo ════════════════════════════════════════════
+echo   Telegram Channel Bot - Installation
+echo ════════════════════════════════════════════
 echo.
 
-:: Проверка Python
+:: Check Python
 python --version > nul 2>&1
 if errorlevel 1 (
-    echo [ОШИБКА] Python не найден! Установите Python 3.11+
+    echo ❌ Python not found!
+    echo Please install Python 3.11+ from https://python.org
     pause
     exit /b 1
 )
 
-echo [1/5] Создание виртуального окружения...
+echo ✅ Python found
+echo.
+
+:: Create virtual environment
+echo 📦 Creating virtual environment...
 if not exist "venv" (
     python -m venv venv
-    echo       Виртуальное окружение создано
+    echo ✅ Virtual environment created
 ) else (
-    echo       Виртуальное окружение уже существует
+    echo ℹ️ Virtual environment already exists
 )
-
 echo.
-echo [2/5] Активация виртуального окружения...
+
+:: Activate venv and install packages
+echo 📥 Installing dependencies...
 call venv\Scripts\activate.bat
-
-echo.
-echo [3/5] Установка зависимостей...
 pip install --upgrade pip > nul
 pip install -r requirements.txt
-
+echo ✅ Dependencies installed
 echo.
-echo [4/5] Настройка конфигурации...
+
+:: Copy .env if not exists
 if not exist ".env" (
+    echo 📝 Creating .env file...
     copy .env.example .env > nul
-    echo       Создан файл .env - ОТРЕДАКТИРУЙТЕ ЕГО!
+    echo ✅ .env created from .env.example
+    echo.
+    echo ⚠️  IMPORTANT: Edit .env file and fill in your credentials!
 ) else (
-    echo       Файл .env уже существует
+    echo ℹ️ .env file already exists
 )
-
-echo.
-echo [5/5] Инициализация базы данных...
-if not exist "data" mkdir data
-if not exist "data\backups" mkdir data\backups
-python scripts/setup_db.py
-
-echo.
-echo ========================================
-echo   Установка завершена!
-echo ========================================
-echo.
-echo Следующие шаги:
-echo 1. Отредактируйте файл .env
-echo 2. Запустите start_admin.bat
 echo.
 
+:: Create data directory
+if not exist "data" (
+    mkdir data
+    mkdir data\backups
+    echo ✅ Data directories created
+)
+echo.
+
+:: Initialize database
+echo 🔧 Initializing database...
+python scripts\setup_db.py
+echo.
+
+echo ════════════════════════════════════════════
+echo   ✅ Installation complete!
+echo ════════════════════════════════════════════
+echo.
+echo Next steps:
+echo   1. Edit .env file with your credentials
+echo   2. Run start_all.bat to start the bot
+echo.
 pause
