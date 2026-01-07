@@ -1,100 +1,103 @@
-"""
-Admin Panel - FastAPI Application
-Точка входа для запуска админ-панели
-"""
+"""Admin panel API server."""
 
 import sys
 from pathlib import Path
 from contextlib import asynccontextmanager
+from datetime import datetime
 
-import uvicorn
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
-# Добавляем корень проекта в path
-ROOT_DIR = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT_DIR))
-
-from admin.config import settings
-from admin.database import check_database
-from admin.api import api_router
+from bot.config import config
+from bot.database import init_db, close_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifecycle events"""
+    """Application lifespan - startup and shutdown."""
     # Startup
-    print("=" * 50)
-    print("🚀 Admin Panel Starting...")
-    print(f"📁 Database: {settings.DATABASE_PATH}")
-    print(f"🔧 Debug: {settings.DEBUG}")
-    print("=" * 50)
-    
-    # Проверка БД
-    db_ok = await check_database()
-    if db_ok:
-        print("✅ Database connected")
-    else:
-        print("❌ Database connection failed!")
+    print("🚀 Starting Admin API...")
+    config.ensure_dirs()
+    await init_db()
+    print("✅ Database connected")
     
     yield
     
     # Shutdown
-    print("👋 Admin Panel Shutting down...")
+    print("🛑 Shutting down...")
+    await close_db()
+    print("✅ Database closed")
 
 
-# Создание приложения
+# Create FastAPI app
 app = FastAPI(
-    title="Telegram Channel Bot - Admin Panel",
-    description="API для управления Telegram ботом продажи доступа к каналам",
+    title="Telegram Channel Bot Admin API",
+    description="Admin panel API for managing the Telegram bot",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# CORS
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],  # In production, specify exact origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Подключение API роутера
-app.include_router(api_router)
 
-
-# Health check
-@app.get("/health", tags=["System"])
-async def health_check():
-    """Проверка состояния сервера"""
-    db_status = await check_database()
+@app.get("/")
+async def root():
+    """Root endpoint."""
     return {
-        "status": "ok" if db_status else "degraded",
-        "database": "connected" if db_status else "disconnected",
+        "name": "Telegram Channel Bot Admin API",
         "version": "1.0.0",
+        "docs": "/docs",
     }
 
 
-@app.get("/", tags=["System"])
-async def root():
-    """Корневой endpoint"""
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
     return {
-        "message": "Telegram Channel Bot - Admin API",
-        "docs": "/docs",
-        "health": "/health",
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "database": config.database_path,
+    }
+
+
+@app.get("/api/status")
+async def api_status():
+    """API status with detailed info."""
+    return {
+        "status": "running",
+        "debug": config.debug,
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 def main():
-    """Запуск сервера"""
+    """Run the admin API server."""
+    print(f"""
+╔════════════════════════════════════════════╗
+║     Telegram Channel Bot - Admin API       ║
+╠════════════════════════════════════════════╣
+║  Host: {config.backend_host:<34} ║
+║  Port: {config.backend_port:<34} ║
+║  Debug: {str(config.debug):<33} ║
+╚════════════════════════════════════════════╝
+    """)
+    
     uvicorn.run(
         "admin.run:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
+        host=config.backend_host,
+        port=config.backend_port,
+        reload=config.debug,
     )
 
 
