@@ -1,59 +1,69 @@
-"""
-Конфигурация Telegram бота.
-"""
+"""Bot configuration from environment variables."""
 
-import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-# Загружаем .env
-load_dotenv()
+from typing import List
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Config:
-    """Конфигурация бота."""
+class Config(BaseSettings):
+    """Application configuration."""
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
     
     # Telegram Bot
-    BOT_TOKEN: str = os.getenv('BOT_TOKEN', '')
+    bot_token: str = ""
+    
+    # Userbot (Pyrogram)
+    userbot_api_id: int = 0
+    userbot_api_hash: str = ""
+    userbot_phone: str = ""
+    userbot_session_string: str = ""
     
     # Admin IDs
-    ADMIN_IDS: list[int] = [
-        int(x.strip()) 
-        for x in os.getenv('ADMIN_IDS', '').split(',') 
-        if x.strip().isdigit()
-    ]
+    admin_ids: str = ""
     
-    # CryptoBot
-    CRYPTOBOT_TOKEN: str = os.getenv('CRYPTOBOT_TOKEN', '')
-    CRYPTOBOT_WEBHOOK_SECRET: str = os.getenv('CRYPTOBOT_WEBHOOK_SECRET', '')
+    # Crypto Wallets
+    ton_wallet: str = ""
+    trc20_wallet: str = ""
     
     # Database
-    BASE_DIR: Path = Path(__file__).parent.parent
-    DATABASE_PATH: str = os.getenv('DATABASE_PATH', str(BASE_DIR / 'data' / 'bot.db'))
+    database_path: str = "./data/bot.db"
+    backup_dir: str = "./data/backups"
     
-    # Settings
-    DEBUG: bool = os.getenv('DEBUG', 'false').lower() == 'true'
-    DEFAULT_LANGUAGE: str = os.getenv('DEFAULT_LANGUAGE', 'ru')
+    # Server
+    backend_host: str = "0.0.0.0"
+    backend_port: int = 8000
     
-    # Support
-    SUPPORT_URL: str = os.getenv('SUPPORT_URL', '')
+    # App
+    debug: bool = True
+    secret_key: str = "change-this-secret-key"
     
-    # Rate limiting
-    RATE_LIMIT_MESSAGES: int = 30  # сообщений
-    RATE_LIMIT_PERIOD: int = 60    # секунд
+    @property
+    def admin_ids_list(self) -> List[int]:
+        """Get list of admin Telegram IDs."""
+        if not self.admin_ids:
+            return []
+        return [int(x.strip()) for x in self.admin_ids.split(",") if x.strip()]
     
-    # Notifications settings
-    NOTIFY_NEW_USERS: bool = True
-    NOTIFY_PAYMENTS: bool = True
+    @property
+    def database_url(self) -> str:
+        """Get SQLite database URL."""
+        return f"sqlite+aiosqlite:///{self.database_path}"
     
-    @classmethod
-    def validate(cls) -> bool:
-        """Проверить обязательные настройки."""
-        if not cls.BOT_TOKEN:
-            raise ValueError("BOT_TOKEN is required")
-        if not cls.ADMIN_IDS:
-            raise ValueError("ADMIN_IDS is required")
-        return True
+    @property
+    def database_sync_url(self) -> str:
+        """Get synchronous SQLite database URL (for alembic)."""
+        return f"sqlite:///{self.database_path}"
+    
+    def ensure_dirs(self) -> None:
+        """Create necessary directories."""
+        Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(self.backup_dir).mkdir(parents=True, exist_ok=True)
 
 
+# Global config instance
 config = Config()
