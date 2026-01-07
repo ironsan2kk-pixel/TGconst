@@ -2,45 +2,48 @@
 chcp 65001 > nul
 cd /d "%~dp0"
 
-echo ========================================
-echo   Запуск всех компонентов
-echo ========================================
+echo ════════════════════════════════════════════
+echo   Telegram Channel Bot - Start All
+echo ════════════════════════════════════════════
 echo.
 
-:: Проверка .env
-if not exist ".env" (
-    echo [ОШИБКА] Файл .env не найден!
-    echo Скопируйте .env.example в .env и заполните
+:: Check venv
+if not exist "venv\Scripts\activate.bat" (
+    echo ❌ Virtual environment not found!
+    echo Run install.bat first.
     pause
     exit /b 1
 )
 
-echo [INFO] Запуск Admin Backend (FastAPI)...
-start "Admin Backend" cmd /k "call start_admin.bat"
-timeout /t 3 >nul
+:: Check .env
+if not exist ".env" (
+    echo ❌ .env file not found!
+    echo Copy .env.example to .env and configure it.
+    pause
+    exit /b 1
+)
 
-echo [INFO] Запуск Telegram Bot...
-start "Telegram Bot" cmd /k "call start_bot.bat"
-timeout /t 2 >nul
-
-echo [INFO] Запуск Userbot (Pyrogram)...
-start "Userbot" cmd /k "call start_userbot.bat"
-timeout /t 2 >nul
-
-echo [INFO] Запуск Frontend (React)...
-start "Frontend" cmd /k "call start_frontend.bat"
-
-echo.
-echo ========================================
-echo   Все компоненты запущены!
-echo ========================================
-echo.
-echo   Admin Backend: http://localhost:8000
-echo   Frontend:      http://localhost:3000
-echo   API Docs:      http://localhost:8000/docs
-echo.
-echo   Для остановки запустите stop_all.bat
-echo ========================================
+echo 🚀 Starting all services in separate windows...
 echo.
 
-pause
+:: Start Admin API in new window
+start "Admin API" cmd /k "cd /d "%~dp0" && call venv\Scripts\activate.bat && python -m admin.run"
+echo ✅ Admin API started
+
+:: Wait a bit
+timeout /t 2 /nobreak > nul
+
+:: Start Bot in new window
+start "Telegram Bot" cmd /k "cd /d "%~dp0" && call venv\Scripts\activate.bat && python -m bot.run"
+echo ✅ Telegram Bot started
+
+echo.
+echo ════════════════════════════════════════════
+echo   All services started!
+echo ════════════════════════════════════════════
+echo.
+echo Admin API: http://localhost:8000
+echo API Docs:  http://localhost:8000/docs
+echo.
+echo Close this window or press any key to exit.
+pause > nul
