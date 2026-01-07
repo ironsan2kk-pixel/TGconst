@@ -2,41 +2,33 @@
 chcp 65001 > nul
 cd /d "%~dp0"
 
-echo ========================================
-echo   Запуск Admin Panel (Backend)
-echo ========================================
+echo ════════════════════════════════════════════
+echo   Telegram Channel Bot - Admin API
+echo ════════════════════════════════════════════
 echo.
 
-:: Активация виртуального окружения
+:: Check venv
 if not exist "venv\Scripts\activate.bat" (
-    echo [ОШИБКА] Виртуальное окружение не найдено!
-    echo Сначала запустите install.bat
+    echo ❌ Virtual environment not found!
+    echo Run install.bat first.
     pause
     exit /b 1
 )
 
+:: Check .env
+if not exist ".env" (
+    echo ❌ .env file not found!
+    echo Copy .env.example to .env and configure it.
+    pause
+    exit /b 1
+)
+
+:: Activate venv
 call venv\Scripts\activate.bat
 
-:: Проверка .env
-if not exist ".env" (
-    echo [ОШИБКА] Файл .env не найден!
-    echo Скопируйте .env.example в .env и настройте
-    pause
-    exit /b 1
-)
-
-echo Запуск FastAPI на http://localhost:8001
-echo Swagger UI: http://localhost:8001/docs
-echo Health: http://localhost:8001/health
+:: Start admin API
+echo 🚀 Starting Admin API server...
 echo.
-echo Для остановки нажмите Ctrl+C
-echo.
-
 python -m admin.run
 
-:: Если вышли с ошибкой - показать
-if errorlevel 1 (
-    echo.
-    echo [ОШИБКА] Сервер упал с ошибкой!
-    pause
-)
+pause
