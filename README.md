@@ -1,61 +1,51 @@
 # 🤖 Telegram Channel Bot
 
-Telegram-бот для продажи доступа к приватным каналам через криптовалюту (CryptoBot/USDT).
+Telegram-бот для продажи доступа к приватным каналам через криптовалюту (TON/TRC20 USDT).
 
 ## ✨ Возможности
 
-- 📺 **Пакеты каналов** — один тариф = доступ к нескольким каналам
-- 💳 **CryptoBot оплата** — USDT через CryptoBot API
-- 🌐 **Два языка** — русский и английский с переключением
-- 🎁 **Промокоды** — скидки процентом или фиксированной суммой
-- ⏱️ **Пробный период** — опционально для каждого тарифа
-- 🔗 **Deep Links** — прямые ссылки на тарифы
-- 📊 **Админ-панель** — React с тёмной темой и графиками
-- 🛠️ **Конструктор меню** — настройка кнопок бота
-- 📨 **Рассылки** — фильтры по подписке и языку
-- 🔔 **Уведомления** — о новых юзерах и оплатах
+- **Пакеты каналов** — один пакет = несколько каналов + варианты сроков (30/90/365 дней)
+- **Два языка** — русский и английский с переключением
+- **Пробный период** — 3/5/7 дней опционально
+- **Оплата криптой** — TON и TRC20 (USDT), проверка по hash транзакции
+- **Промокоды** — скидки в % или фиксированная сумма
+- **Контент-менеджер** — все тексты редактируются в админке
+- **Админ-панель** — React с тёмной темой
+- **Автоматизация** — автоинвайт/кик через userbot
 
-## 🏗️ Архитектура
+## 🛠 Технологии
 
-```
-┌────────────────────────────────────────────────┐
-│          АДМИН-ПАНЕЛЬ (React)                  │
-│  🌓 Тёмная тема │ 📊 Графики │ 📋 CRUD        │
-└────────────────────────┬───────────────────────┘
-                         │ REST API
-                         ▼
-┌────────────────────────────────────────────────┐
-│               BACKEND (FastAPI)                │
-│  ┌──────────────────────────────────────────┐  │
-│  │           bot.db (SQLite)                │  │
-│  └──────────────────────────────────────────┘  │
-└────────────────────────┬───────────────────────┘
-                         │
-          ┌──────────────┼──────────────┐
-          ▼              ▼              ▼
-    ┌──────────┐  ┌───────────┐  ┌───────────┐
-    │ TELEGRAM │  │ CRYPTOBOT │  │  USERBOT  │
-    │   BOT    │  │    API    │  │ (Pyrogram)│
-    │ (Aiogram)│  │  Платежи  │  │  Инвайты  │
-    └──────────┘  └───────────┘  └───────────┘
-```
+| Компонент | Технология |
+|-----------|------------|
+| Backend API | FastAPI |
+| ORM | SQLAlchemy 2.0 |
+| Database | SQLite (aiosqlite) |
+| Telegram Bot | Aiogram 3 |
+| Userbot | Pyrogram |
+| Frontend | React + Vite + Tailwind |
 
 ## 🚀 Быстрый старт (Windows)
 
+### 1. Клонирование
 ```cmd
-:: 1. Клонировать репозиторий
 git clone https://github.com/ironsan2kk-pixel/TGconst.git
 cd TGconst
+```
 
-:: 2. Установка
+### 2. Установка
+```cmd
 install.bat
+```
 
-:: 3. Настроить .env
-:: Открыть .env и заполнить BOT_TOKEN, ADMIN_IDS
+### 3. Настройка
+Скопируйте `.env.example` в `.env` и заполните:
+- `BOT_TOKEN` — токен бота от @BotFather
+- `ADMIN_IDS` — Telegram ID администраторов
+- `TON_WALLET` / `TRC20_WALLET` — адреса кошельков
 
-:: 4. Запустить админку
-start_admin.bat
-:: http://localhost:8001 - админ-панель
+### 4. Запуск
+```cmd
+start_all.bat
 ```
 
 ## 📁 Структура проекта
@@ -63,51 +53,19 @@ start_admin.bat
 ```
 telegram-channel-bot/
 ├── bot/                    # Telegram бот (Aiogram 3)
-│   ├── models/             # SQLAlchemy модели
-│   ├── handlers/           # Обработчики команд
-│   ├── keyboards/          # Клавиатуры
-│   ├── middlewares/        # Middleware
-│   ├── services/           # Бизнес-логика
-│   └── locales/            # Локализация
-├── userbot/                # Pyrogram userbot
+├── userbot/                # Pyrogram userbot  
 ├── admin/                  # Backend API (FastAPI)
-│   ├── api/                # Эндпоинты
-│   └── schemas/            # Pydantic схемы
 ├── frontend/               # React админка
-├── data/                   # База данных
+├── data/                   # База данных и бэкапы
 ├── scripts/                # Утилиты
 └── *.bat                   # Windows скрипты
 ```
 
-## 🛠️ Технологии
-
-| Компонент | Технология |
-|-----------|------------|
-| Backend API | FastAPI |
-| ORM | SQLAlchemy 2.0 + aiosqlite |
-| Telegram Bot | Aiogram 3 |
-| Userbot | Pyrogram |
-| Frontend | React + Tailwind CSS |
-| Графики | Recharts |
-
-## 📋 .bat файлы
-
-| Файл | Описание |
-|------|----------|
-| `install.bat` | Установка (venv, pip, БД) |
-| `start_bot.bat` | Запуск Telegram бота |
-| `start_admin.bat` | Запуск админ-панели |
-| `start_userbot.bat` | Запуск Pyrogram userbot |
-| `start_frontend.bat` | Запуск React dev server |
-| `start_all.bat` | Запуск всех компонентов |
-| `stop_all.bat` | Остановка всех процессов |
-
 ## 📖 Документация
 
-- [MASTER_PLAN.md](MASTER_PLAN.md) — полное описание проекта
-- [CHECKLIST.md](CHECKLIST.md) — чек-лист разработки
-- [CLAUDE_INSTRUCTION.md](CLAUDE_INSTRUCTION.md) — инструкция для Claude
+- [MASTER_PLAN.md](MASTER_PLAN.md) — архитектура и детали
+- [CHECKLIST.md](CHECKLIST.md) — прогресс разработки
 
-## 📄 Лицензия
+## 📝 Лицензия
 
 MIT License
