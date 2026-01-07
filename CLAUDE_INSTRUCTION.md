@@ -11,7 +11,7 @@
 ### GitHub Repository
 ```
 URL: https://github.com/ironsan2kk-pixel/TGconst
-Token: Указывается в начале каждого чата или в Project Instructions
+Token: YOUR_GITHUB_TOKEN_HERE
 Branch: main
 ```
 
