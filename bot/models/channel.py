@@ -1,18 +1,18 @@
 """Channel model."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from sqlalchemy import BigInteger, String, Text, Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, TimestampMixin
+from bot.models.base import Base, TimestampMixin, SoftDeleteMixin
 
 if TYPE_CHECKING:
-    from .tariff import TariffChannel
+    from bot.models.package import PackageChannel
 
 
-class Channel(Base, TimestampMixin):
-    """Telegram channel for selling access."""
+class Channel(Base, TimestampMixin, SoftDeleteMixin):
+    """Telegram channel."""
     
     __tablename__ = "channels"
     
@@ -25,8 +25,8 @@ class Channel(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     
     # Relationships
-    tariff_channels: Mapped[list["TariffChannel"]] = relationship(
-        "TariffChannel",
+    package_channels: Mapped[List["PackageChannel"]] = relationship(
+        "PackageChannel",
         back_populates="channel",
         cascade="all, delete-orphan"
     )
