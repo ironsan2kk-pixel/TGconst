@@ -1,6 +1,6 @@
 # ✅ ЧЕК-ЛИСТ: Telegram-бот продажи доступа к каналам
 
-**Версия:** 3.0 (Чистый старт)  
+**Версия:** 4.0  
 **Платформа:** Windows Server  
 **Архитектура:** Один бот, SQLite, без Docker
 
@@ -23,57 +23,54 @@
 
 ---
 
-## ЧАТ 1: Структура и база данных
-**Статус:** ✅ Готово
-
-### Подготовка репозитория:
-- [x] Удалить старые файлы (backend/, frontend/, userbot/, scripts/, *.bat)
-- [x] Оставить: README.md (обновить), .gitattributes
-- [x] Загрузить: MASTER_PLAN.md, CHECKLIST.md, CLAUDE_INSTRUCTION.md
+## ЧАТ 1: Структура + База данных
+**Статус:** ⬜ Не начат
 
 ### Конфигурационные файлы:
-- [x] `.gitignore` (data/, venv/, .env, __pycache__/, node_modules/, logs/)
-- [x] `.env.example` (все переменные)
-- [x] `requirements.txt`
+- [ ] `.gitignore` (data/, venv/, .env, __pycache__/, node_modules/, logs/)
+- [ ] `.env.example` (все переменные: BOT_TOKEN, ADMIN_IDS, кошельки)
+- [ ] `requirements.txt`
 
 ### Структура папок:
-- [x] `data/` и `data/backups/`
-- [x] `bot/`, `bot/models/`, `bot/handlers/`, `bot/keyboards/`
-- [x] `bot/callbacks/`, `bot/middlewares/`, `bot/services/`, `bot/locales/`
-- [x] `userbot/`, `userbot/actions/`
-- [x] `admin/`, `admin/api/`, `admin/schemas/`
-- [x] `frontend/`, `scripts/`
+- [ ] `data/` и `data/backups/`
+- [ ] `bot/`, `bot/models/`, `bot/handlers/`, `bot/keyboards/`
+- [ ] `bot/callbacks/`, `bot/middlewares/`, `bot/services/`, `bot/locales/`
+- [ ] `userbot/`, `userbot/actions/`
+- [ ] `admin/`, `admin/api/`, `admin/schemas/`
+- [ ] `frontend/`, `scripts/`
 
 ### SQLAlchemy модели (`bot/models/`):
-- [x] `__init__.py`, `base.py`
-- [x] `settings.py` — Settings (key-value)
-- [x] `channel.py` — Channel
-- [x] `tariff.py` — Tariff, TariffChannel
-- [x] `user.py` — User
-- [x] `subscription.py` — Subscription
-- [x] `payment.py` — Payment
-- [x] `promocode.py` — Promocode, PromocodeUse
-- [x] `broadcast.py` — Broadcast
-- [x] `menu_item.py` — MenuItem (конструктор меню)
-- [x] `faq_item.py` — FAQItem (вопросы-ответы)
-- [x] `admin_log.py` — AdminLog
+- [ ] `__init__.py`, `base.py`
+- [ ] `settings.py` — Settings (key-value)
+- [ ] `wallet.py` — Wallet (TON/TRC20 адреса)
+- [ ] `channel.py` — Channel
+- [ ] `package.py` — Package, PackageChannel, PackageOption
+- [ ] `user.py` — User
+- [ ] `subscription.py` — Subscription
+- [ ] `payment.py` — Payment
+- [ ] `promocode.py` — Promocode, PromocodeUse
+- [ ] `text.py` — Text (контент-менеджер)
+- [ ] `faq.py` — FAQItem
+- [ ] `broadcast.py` — Broadcast
+- [ ] `task.py` — Task (очередь для userbot)
+- [ ] `admin_log.py` — AdminLog
 
 ### База данных:
-- [x] `bot/database.py` — async engine, get_session, init_db
-- [x] `scripts/setup_db.py` — инициализация БД
+- [ ] `bot/database.py` — async engine, get_session, init_db
+- [ ] `scripts/setup_db.py` — инициализация БД + дефолтные тексты
 
 ### Базовый Backend:
-- [x] `admin/__init__.py`, `admin/config.py`, `admin/database.py`
-- [x] `admin/run.py` — точка входа FastAPI
-- [x] `admin/api/__init__.py` — главный роутер
-- [x] `GET /health` → `{"status": "ok", "database": "connected"}`
+- [ ] `admin/__init__.py`, `admin/config.py`, `admin/database.py`
+- [ ] `admin/run.py` — точка входа FastAPI
+- [ ] `admin/api/__init__.py` — главный роутер
+- [ ] `GET /health` → `{"status": "ok", "database": "connected"}`
 
 ### Windows .bat файлы (UTF-8, chcp 65001):
-- [x] `install.bat` — создание venv, pip install, копирование .env, setup_db
-- [x] `start_admin.bat` — запуск FastAPI backend
+- [ ] `install.bat` — создание venv, pip install, копирование .env, setup_db
+- [ ] `start_admin.bat` — запуск FastAPI backend
 
 ### README.md:
-- [x] Обновить с новым описанием проекта
+- [ ] Обновить с новым описанием проекта
 
 ### Проверка:
 ```cmd
@@ -85,255 +82,251 @@ start_admin.bat
 ---
 
 ## ЧАТ 2: Telegram бот — Ядро
-**Статус:** ✅ Готово
-
-### Локализация:
-- [x] `bot/locales/__init__.py` — get_text()
-- [x] `bot/locales/ru.py` — все тексты RU
-- [x] `bot/locales/en.py` — все тексты EN
+**Статус:** ⬜ Не начат
 
 ### Конфигурация и Loader:
-- [x] `bot/__init__.py`, `bot/config.py`
-- [x] `bot/loader.py` — Bot, Dispatcher
+- [ ] `bot/__init__.py`, `bot/config.py`
+- [ ] `bot/loader.py` — Bot, Dispatcher
+
+### Сервис контента:
+- [ ] `bot/services/content.py` — ContentService (тексты из БД с кэшем)
+
+### Локализация (дефолтные значения):
+- [ ] `bot/locales/__init__.py`
+- [ ] `bot/locales/ru.py` — все тексты RU
+- [ ] `bot/locales/en.py` — все тексты EN
 
 ### Middleware:
-- [x] `bot/middlewares/__init__.py`
-- [x] `bot/middlewares/database.py` — сессия БД
-- [x] `bot/middlewares/user.py` — регистрация юзера + уведомление админам
-- [x] `bot/middlewares/i18n.py` — определение языка
-- [x] `bot/middlewares/ban.py` — проверка бана
-- [x] `bot/middlewares/rate_limit.py` — лимит 30/мин
+- [ ] `bot/middlewares/__init__.py`
+- [ ] `bot/middlewares/database.py` — сессия БД
+- [ ] `bot/middlewares/user.py` — регистрация юзера + уведомление админам
+- [ ] `bot/middlewares/i18n.py` — определение языка
+- [ ] `bot/middlewares/ban.py` — проверка бана
+- [ ] `bot/middlewares/rate_limit.py` — лимит 30/мин
 
 ### Клавиатуры:
-- [x] `bot/keyboards/__init__.py`, `bot/keyboards/inline.py`
-- [x] language_keyboard(), main_menu_keyboard()
-- [x] tariffs_keyboard(), tariff_detail_keyboard()
+- [ ] `bot/keyboards/__init__.py`, `bot/keyboards/inline.py`
+- [ ] language_keyboard(), main_menu_keyboard()
+- [ ] packages_keyboard(), package_detail_keyboard()
+- [ ] package_options_keyboard()
 
 ### Handlers:
-- [x] `bot/handlers/__init__.py`
-- [x] `bot/handlers/start.py` — /start, deep links
-- [x] `bot/handlers/menu.py` — главное меню
-- [x] `bot/handlers/language.py` — смена языка
-- [x] `bot/handlers/tariffs.py` — список и детали тарифов
+- [ ] `bot/handlers/__init__.py`
+- [ ] `bot/handlers/start.py` — /start, выбор языка
+- [ ] `bot/handlers/menu.py` — главное меню
+- [ ] `bot/handlers/language.py` — смена языка
+- [ ] `bot/handlers/packages.py` — список пакетов, детали, выбор срока
 
 ### Callbacks:
-- [x] `bot/callbacks/__init__.py`
-- [x] `bot/callbacks/language.py`
-- [x] `bot/callbacks/tariff.py`
+- [ ] `bot/callbacks/__init__.py`
+- [ ] `bot/callbacks/language.py`
+- [ ] `bot/callbacks/package.py`
 
 ### Сервисы:
-- [x] `bot/services/__init__.py`
-- [x] `bot/services/notifications.py` — notify_admins()
+- [ ] `bot/services/__init__.py`
+- [ ] `bot/services/notifications.py` — notify_admins()
 
 ### Точка входа:
-- [x] `bot/run.py`
+- [ ] `bot/run.py`
 
 ### Windows .bat:
-- [x] `start_bot.bat`
+- [ ] `start_bot.bat`
 
 ### Проверка:
 ```cmd
 start_bot.bat
-:: /start в Telegram → выбор языка → меню
+:: /start в Telegram → выбор языка → меню → пакеты
 ```
 
 ---
 
-## ЧАТ 3: CryptoBot оплата
-**Статус:** ✅ Готово
+## ЧАТ 3: Оплата + Userbot
+**Статус:** ⬜ Не начат
 
-### CryptoBot API:
-- [x] `bot/services/cryptobot.py` — CryptoBotAPI класс
-- [x] create_invoice(), get_invoice(), verify_webhook_signature()
+### Blockchain API:
+- [ ] `bot/services/blockchain.py` — BlockchainService
+- [ ] check_ton_transaction() — проверка TON через toncenter
+- [ ] check_trc20_transaction() — проверка TRC20 через trongrid
 
 ### Handler и Callbacks оплаты:
-- [x] `bot/handlers/payment.py`
-- [x] `bot/callbacks/payment.py`
-
-### Webhook:
-- [x] `admin/api/webhooks.py` — POST /webhooks/cryptobot
+- [ ] `bot/handlers/payment.py` — выбор сети, показ адреса, приём hash
+- [ ] `bot/callbacks/payment.py`
 
 ### Сервис подписок:
-- [x] `bot/services/subscription.py`
-
-### Проверка:
-```cmd
-:: Добавить CRYPTOBOT_TOKEN в .env
-:: Выбрать тариф → Оплатить → webhook → подписка создана
-```
-
----
-
-## ЧАТ 4: Userbot + Подписки
-**Статус:** ✅ Готово
+- [ ] `bot/services/subscription.py` — create_subscription(), activate()
 
 ### Userbot:
-- [x] `userbot/__init__.py`, `userbot/config.py`
-- [x] `userbot/client.py` — Pyrogram Client
-- [x] `userbot/run.py`
+- [ ] `userbot/__init__.py`, `userbot/config.py`
+- [ ] `userbot/client.py` — Pyrogram Client
+- [ ] `userbot/run.py`
+- [ ] `userbot/task_processor.py` — обработка очереди tasks
 
 ### Действия:
-- [x] `userbot/actions/__init__.py`
-- [x] `userbot/actions/invite.py` — invite_to_channels()
-- [x] `userbot/actions/kick.py` — kick_from_channels()
+- [ ] `userbot/actions/__init__.py`
+- [ ] `userbot/actions/invite.py` — invite_to_channels()
+- [ ] `userbot/actions/kick.py` — kick_from_channels()
 
-### Проверка подписок:
-- [x] `bot/services/subscription_checker.py`
-- [x] Уведомления за 3 дня, за 1 день
-- [x] Автокик при истечении
+### Scripts:
+- [ ] `scripts/generate_session.py`
 
 ### Windows .bat:
-- [x] `start_userbot.bat`
-- [x] `generate_session.bat`
+- [ ] `start_userbot.bat`
+- [ ] `generate_session.bat`
 
 ### Проверка:
 ```cmd
 generate_session.bat
 start_userbot.bat
-:: После оплаты → юзер в каналах
+:: Выбрать пакет → срок → сеть → адрес → отправить hash → проверка → доступ
 ```
 
 ---
 
-## ЧАТ 5: Фичи бота
-**Статус:** ✅ Готово
-
-### Промокоды:
-- [x] `bot/handlers/promocode.py`
-- [x] `bot/services/promocode.py`
+## ЧАТ 4: Подписки + Фичи
+**Статус:** ⬜ Не начат
 
 ### Мои подписки:
-- [x] `bot/handlers/subscription.py`
+- [ ] `bot/handlers/subscription.py` — список подписок, ссылки на каналы
+- [ ] `bot/callbacks/subscription.py` — показ ссылок, продление
 
-### Конструктор меню (навигация в боте):
-- [x] `bot/handlers/menu_navigation.py`
-  - Загрузка дерева меню из БД
-  - Обработка разделов (подменю)
-  - Обработка типов: link, text, faq, system
-  - Условия показа (subscribed/not_subscribed/language)
-  - Кнопка "Назад" для подменю
+### Промокоды:
+- [ ] `bot/handlers/promocode.py`
+- [ ] `bot/services/promocode.py` — apply_promocode()
 
-### FAQ (Вопросы-ответы):
-- [x] `bot/handlers/faq.py`
-  - Показ вопросов в категории
-  - Показ ответа
-
-### Админ в боте:
-- [x] `bot/handlers/admin.py`
-- [x] `bot/callbacks/admin.py`
-- [x] /admin, /stats
-- [x] Поиск юзера, выдача/отзыв доступа
-- [x] Бан/разбан
-- [x] Ручное подтверждение оплаты
+### FAQ:
+- [ ] `bot/handlers/faq.py` — список вопросов, показ ответа
+- [ ] `bot/callbacks/faq.py`
 
 ### Пробный период:
-- [x] Логика trial в оплате
+- [ ] Логика trial в payment flow
+- [ ] Проверка user.trial_used
 
-### Проверка:
-```cmd
-:: /admin → меню работает
-:: Промокод применяется
-:: Мои подписки показывает список
-```
-
----
-
-## ЧАТ 6: Рассылки
-**Статус:** ✅ Готово
-
-### Сервис рассылок:
-- [x] `bot/services/broadcast.py`
-- [x] create_broadcast(), start_broadcast(), pause/cancel
-
-### API для админки:
-- [x] `admin/api/broadcasts.py`
-- [x] `admin/schemas/broadcast.py`
+### Проверка подписок:
+- [ ] `bot/services/subscription_checker.py`
+- [ ] Уведомления за 3 дня, за 1 день
+- [ ] Автокик при истечении
+- [ ] Обновление статуса подписки
 
 ### Админ в боте:
-- [x] Быстрая рассылка через /admin
+- [ ] `bot/handlers/admin.py`
+- [ ] `bot/callbacks/admin.py`
+- [ ] /admin, /stats
+- [ ] Поиск юзера, выдача/отзыв доступа
+- [ ] Бан/разбан
+- [ ] Ручное подтверждение оплаты
 
 ### Проверка:
 ```cmd
-:: /admin → Рассылка → текст → отправлено X из Y
+:: "Мои подписки" → ссылки на каналы
+:: Промокод применяется
+:: FAQ работает
+:: /admin → меню работает
 ```
 
 ---
 
-## ЧАТ 7: Админка — Backend API
-**Статус:** ✅ Готово
+## ЧАТ 5: Backend API
+**Статус:** ⬜ Не начат
 
 ### Dashboard:
-- [x] `admin/api/dashboard.py` — stats, charts, recent
+- [ ] `admin/api/dashboard.py` — stats, charts data, recent events
 
-### CRUD:
-- [x] `admin/api/channels.py` + `admin/schemas/channel.py`
-- [x] `admin/api/tariffs.py` + `admin/schemas/tariff.py`
-- [x] `admin/api/users.py` + `admin/schemas/user.py` — + grant/revoke/ban
-- [x] `admin/api/subscriptions.py` + `admin/schemas/subscription.py`
-- [x] `admin/api/payments.py` + `admin/schemas/payment.py` — + manual confirm
-- [x] `admin/api/promocodes.py` + `admin/schemas/promocode.py`
-- [x] `admin/api/menu.py` + `admin/schemas/menu.py` — конструктор меню
-- [x] `admin/api/faq.py` + `admin/schemas/faq.py` — вопросы-ответы
-- [x] `admin/api/settings.py` + `admin/schemas/settings.py`
+### CRUD Пакеты:
+- [ ] `admin/api/packages.py` — пакеты + каналы + варианты
+- [ ] `admin/api/channels.py` — отдельно каналы
+- [ ] `admin/schemas/package.py`, `admin/schemas/channel.py`
+
+### CRUD Юзеры:
+- [ ] `admin/api/users.py` — + grant/revoke/ban
+- [ ] `admin/schemas/user.py`
+
+### CRUD Подписки и Платежи:
+- [ ] `admin/api/subscriptions.py`
+- [ ] `admin/api/payments.py` — + manual confirm
+- [ ] `admin/schemas/subscription.py`, `admin/schemas/payment.py`
+
+### CRUD Промокоды:
+- [ ] `admin/api/promocodes.py`
+- [ ] `admin/schemas/promocode.py`
+
+### Контент:
+- [ ] `admin/api/content.py` — texts + faq CRUD
+- [ ] `admin/schemas/content.py`
+
+### Настройки:
+- [ ] `admin/api/settings.py` — + wallets
+- [ ] `admin/schemas/settings.py`
+
+### Рассылки:
+- [ ] `admin/api/broadcasts.py`
+- [ ] `admin/schemas/broadcast.py`
 
 ### Экспорт и Бэкапы:
-- [x] `admin/api/export.py` — CSV
-- [x] `admin/api/backup.py`
-- [x] `scripts/backup_db.py`
-- [x] `backup_db.bat`
+- [ ] `admin/api/export.py` — CSV (users, payments)
+- [ ] `admin/api/backup.py`
+- [ ] `scripts/backup_db.py`
+- [ ] `backup_db.bat`
 
 ### Проверка:
 ```cmd
 start_admin.bat
-:: http://localhost:8000/docs — Swagger работает
+:: http://localhost:8000/docs — Swagger полный
+:: Все endpoints работают
 ```
 
 ---
 
-## ЧАТ 8: Админка — Frontend
-**Статус:** ✅ Готово
+## ЧАТ 6: Frontend (React админка)
+**Статус:** ⬜ Не начат
 
 ### Базовая структура:
-- [x] `frontend/package.json`, `vite.config.js`, `tailwind.config.js`
-- [x] `frontend/src/main.jsx`, `App.jsx`, `index.css`
+- [ ] `frontend/package.json`, `vite.config.js`, `tailwind.config.js`
+- [ ] `frontend/src/main.jsx`, `App.jsx`, `index.css`
 
 ### API клиент:
-- [x] `frontend/src/api/client.js` и все модули
+- [ ] `frontend/src/api/client.js`
+- [ ] `frontend/src/api/dashboard.js`
+- [ ] `frontend/src/api/packages.js`
+- [ ] `frontend/src/api/users.js`
+- [ ] `frontend/src/api/payments.js`
+- [ ] `frontend/src/api/promocodes.js`
+- [ ] `frontend/src/api/content.js`
+- [ ] `frontend/src/api/settings.js`
+- [ ] `frontend/src/api/broadcasts.js`
 
 ### Тёмная тема:
-- [x] `frontend/src/context/ThemeContext.jsx`
-- [x] CSS переменные, localStorage
-- [x] ThemeToggle компонент
+- [ ] `frontend/src/context/ThemeContext.jsx`
+- [ ] CSS переменные, localStorage
+- [ ] ThemeToggle компонент
 
 ### Компоненты:
-- [x] Layout, Sidebar, Header, ThemeToggle
-- [x] StatsCard, Chart (Recharts), DataTable
-- [x] Modal, ConfirmDialog, ExportButton
-- [x] **DragDropTree** — для конструктора меню
-- [x] **MenuItemForm** — форма элемента меню
-- [x] **MenuPreview** — превью меню как в боте
+- [ ] Layout, Sidebar, Header, ThemeToggle
+- [ ] StatsCard, Chart (Recharts), DataTable
+- [ ] Modal, ConfirmDialog
+- [ ] PackageBuilder — конструктор пакетов
 
 ### Страницы:
-- [x] Dashboard с графиками
-- [x] Channels, Tariffs (CRUD)
-- [x] Users (+ выдача/отзыв/бан)
-- [x] Subscriptions, Payments (+ ручное подтверждение)
-- [x] Promocodes, Broadcasts
-- [x] **MenuBuilder** — конструктор меню (drag-n-drop)
-- [x] **FAQ** — вопросы-ответы
-- [x] Settings, Backups
+- [ ] Dashboard — с графиками дохода и юзеров
+- [ ] Packages — конструктор (каналы + варианты)
+- [ ] Users — список + выдача/отзыв/бан
+- [ ] Payments — история + ручное подтверждение
+- [ ] Promocodes — CRUD
+- [ ] Content — тексты + FAQ
+- [ ] Settings — настройки + кошельки
+- [ ] Broadcasts — рассылки
 
 ### Windows .bat:
-- [x] `start_frontend.bat`
-- [x] `start_all.bat`
-- [x] `stop_all.bat`
-- [x] `build_frontend.bat`
+- [ ] `start_frontend.bat`
+- [ ] `start_all.bat`
+- [ ] `stop_all.bat`
+- [ ] `build_frontend.bat`
 
 ### Проверка:
 ```cmd
 cd frontend && npm install && npm run dev
 :: http://localhost:3000 — Dashboard с графиками
 :: Тёмная тема переключается
+:: Все страницы работают
 ```
 
 ---
@@ -342,102 +335,28 @@ cd frontend && npm install && npm run dev
 
 | # | Чат | Статус | Описание |
 |---|-----|--------|----------|
-| 1 | Структура и БД | ✅ | Папки, модели, FastAPI |
-| 2 | Бот — Ядро | ✅ | /start, меню, тарифы, i18n |
-| 3 | CryptoBot | ✅ | Оплата, webhook |
-| 4 | Userbot + Подписки | ✅ | Инвайт, кик, проверка |
-| 5 | Фичи бота | ✅ | Промокоды, админ, trial, **меню, FAQ** |
-| 6 | Рассылки | ✅ | Broadcast система |
-| 7 | Backend API | ✅ | Все endpoints, **menu, faq** |
-| 8 | Frontend | ✅ | React + тёмная тема, **MenuBuilder** |
+| 1 | Структура + БД | ⬜ | Папки, модели, FastAPI |
+| 2 | Бот — Ядро | ⬜ | /start, меню, пакеты, i18n |
+| 3 | Оплата + Userbot | ⬜ | TON/TRC20, invite |
+| 4 | Подписки + Фичи | ⬜ | Промокоды, FAQ, trial, автокик |
+| 5 | Backend API | ⬜ | Все endpoints |
+| 6 | Frontend | ⬜ | React + тёмная тема |
 
 **Легенда:** ⬜ Не начат | 🔄 В работе | ✅ Готово
 
-**Прогресс:** 8/8 чатов (100%)
+**Прогресс:** 0/6 чатов (0%)
 
 ---
 
-## 🚀 ЗАПУСК ПРОЕКТА
+## 🚀 СТАРТ
 
-### Быстрый старт (Windows):
-```cmd
-:: 1. Клонировать репозиторий
-git clone https://github.com/ironsan2kk-pixel/TGconst.git
-cd TGconst
-
-:: 2. Установка
-install.bat
-
-:: 3. Настроить .env
-:: Открыть .env и заполнить BOT_TOKEN, ADMIN_IDS
-
-:: 4. Запустить всё
-start_all.bat
-```
-
-### Доступы:
-- **Admin Panel:** http://localhost:3000
-- **API Docs:** http://localhost:8000/docs
-- **Health Check:** http://localhost:8000/health
+1. Напиши **"Чат 1"**
+2. Claude делает всё из списка
+3. Claude выгружает в GitHub
+4. Ты проверяешь
+5. Пишешь **"Чат 2"** или замечания
+6. Повторяем до конца
 
 ---
 
-## 📁 СТРУКТУРА ФАЙЛОВ
-
-```
-telegram-channel-bot/
-├── .env.example          # Шаблон переменных окружения
-├── .gitignore            # Игнорируемые файлы
-├── requirements.txt      # Python зависимости
-├── README.md             # Документация
-├── MASTER_PLAN.md        # Мастер-план проекта
-├── CHECKLIST.md          # Этот чеклист
-├── CLAUDE_INSTRUCTION.md # Инструкции для Claude
-│
-├── install.bat           # Установка проекта
-├── start_bot.bat         # Запуск Telegram бота
-├── start_admin.bat       # Запуск Backend API
-├── start_userbot.bat     # Запуск Pyrogram userbot
-├── start_frontend.bat    # Запуск React dev server
-├── start_all.bat         # Запуск всех компонентов
-├── stop_all.bat          # Остановка всех процессов
-├── backup_db.bat         # Бэкап базы данных
-├── generate_session.bat  # Генерация Pyrogram session
-├── build_frontend.bat    # Сборка frontend для production
-│
-├── data/                 # База данных и бэкапы
-│   ├── bot.db
-│   └── backups/
-│
-├── bot/                  # Telegram бот (Aiogram 3)
-│   ├── models/           # SQLAlchemy модели
-│   ├── handlers/         # Обработчики команд
-│   ├── keyboards/        # Клавиатуры
-│   ├── callbacks/        # Callback handlers
-│   ├── middlewares/      # Middleware
-│   ├── services/         # Бизнес-логика
-│   └── locales/          # Локализация
-│
-├── userbot/              # Pyrogram userbot
-│   └── actions/          # Invite/Kick
-│
-├── admin/                # Backend API (FastAPI)
-│   ├── api/              # Endpoints
-│   └── schemas/          # Pydantic schemas
-│
-├── frontend/             # React админка
-│   └── src/
-│       ├── api/          # API клиент
-│       ├── components/   # UI компоненты
-│       ├── context/      # React контексты
-│       └── pages/        # Страницы
-│
-└── scripts/              # Утилиты
-    ├── setup_db.py
-    └── backup_db.py
-```
-
----
-
-**🎉 ПРОЕКТ ЗАВЕРШЁН!**
-
+**Готов. Жду команду "Чат 1"!**
