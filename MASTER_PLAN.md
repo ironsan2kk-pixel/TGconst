@@ -10,20 +10,19 @@
 ## 📌 ОБЩЕЕ ОПИСАНИЕ
 
 ### Что это?
-Telegram-бот для продажи доступа к приватным каналам через криптовалюту (TON/TRC20).
+Telegram-бот для продажи доступа к приватным каналам через криптовалюту (TON/TRC20 USDT).
 
 ### Ключевые особенности:
-- **Один бот** — фиксированный шаблон, надёжный и простой
+- **Один бот** — фиксированный шаблон, быстрый деплой
 - **Пакеты каналов** — один пакет = несколько каналов + варианты сроков (30/90/365 дней)
 - **Два языка** — русский и английский с переключением
 - **Пробный период** — 3/5/7 дней опционально для каждого варианта
 - **Оплата криптой** — TON и TRC20 (USDT), проверка по hash транзакции
 - **Тёмная тема** — в админке с переключателем
 - **Контент-менеджер** — все тексты редактируются в админке
-- **Графики аналитики** — доход, конверсия, активность
 - **Напоминания** — о продлении подписки (за 3 дня, за 1 день)
-- **Промокоды** — скидка % или фикс. сумма
-- **Рассылки** — с фильтрами по юзерам
+- **Ручное подтверждение** — админ может подтвердить оплату без крипты
+- **Уведомления админу** — о новых юзерах и покупках прямо в Telegram
 
 ### НЕ включено:
 - ❌ Конструктор меню (фиксированная структура)
@@ -37,7 +36,7 @@ Telegram-бот для продажи доступа к приватным ка�
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    АДМИН-ПАНЕЛЬ (React)                         │
-│  🌓 Тёмная тема │ 📊 Графики │ 📦 Пакеты │ 📝 Контент │ ⚙️     │
+│  🌓 Тёмная тема │ 📦 Пакеты │ 📝 Контент │ 👥 Юзеры │ 📨 Рассылки│
 └────────────────────────────┬────────────────────────────────────┘
                              │ REST API
                              ▼
@@ -80,23 +79,14 @@ Telegram-бот для продажи доступа к приватным ка�
 ```
 support_url           - ссылка на поддержку
 default_language      - ru | en
-notify_new_users      - true/false (уведомлять о новых юзерах)
-notify_payments       - true/false (уведомлять об оплатах)
+notify_new_users      - true/false
+notify_payments       - true/false
 payment_timeout_min   - таймаут ожидания оплаты (минуты)
 promocode_enabled     - показывать кнопку промокода
 trial_enabled         - пробный период включён глобально
+ton_wallet            - адрес TON кошелька
+trc20_wallet          - адрес TRC20 кошелька
 ```
-
----
-
-### Таблица: `wallets`
-| Поле | Тип | Описание |
-|------|-----|----------|
-| id | INTEGER PK | ID |
-| network | TEXT | ton / trc20 |
-| address | TEXT | Адрес кошелька |
-| is_active | BOOLEAN | Активен |
-| created_at | TIMESTAMP | Создан |
 
 ---
 
@@ -107,8 +97,10 @@ trial_enabled         - пробный период включён глобал�
 | channel_id | BIGINT UNIQUE | Telegram ID канала |
 | username | TEXT | @username (без @) |
 | title | TEXT | Название |
+| description | TEXT | Описание |
 | invite_link | TEXT | Пригласительная ссылка |
 | is_active | BOOLEAN | Активен |
+| is_deleted | BOOLEAN | Удалён (soft delete) |
 | created_at | TIMESTAMP | Создан |
 
 ---
@@ -122,6 +114,7 @@ trial_enabled         - пробный период включён глобал�
 | description_ru | TEXT | Описание RU |
 | description_en | TEXT | Описание EN |
 | is_active | BOOLEAN | Активен |
+| is_deleted | BOOLEAN | Удалён (soft delete) |
 | sort_order | INTEGER | Сортировка |
 | created_at | TIMESTAMP | Создан |
 
@@ -136,14 +129,14 @@ trial_enabled         - пробный период включён глобал�
 
 ---
 
-### Таблица: `package_options` (варианты срока/цены)
+### Таблица: `package_options` (варианты подписки)
 | Поле | Тип | Описание |
 |------|-----|----------|
 | id | INTEGER PK | ID |
 | package_id | INTEGER FK | Пакет |
-| duration_days | INTEGER | Срок (30/90/365), 0 = навсегда |
+| duration_days | INTEGER | Срок (дни): 30, 90, 365, 0 = навсегда |
 | price | REAL | Цена USDT |
-| trial_days | INTEGER | Пробный период (0/3/5/7) |
+| trial_days | INTEGER | Пробный период: 0, 3, 5, 7 |
 | is_active | BOOLEAN | Активен |
 | sort_order | INTEGER | Сортировка |
 
@@ -172,14 +165,14 @@ trial_enabled         - пробный период включён глобал�
 | id | INTEGER PK | ID |
 | user_id | INTEGER FK | Юзер |
 | package_id | INTEGER FK | Пакет |
-| package_option_id | INTEGER FK | Вариант (срок) |
-| is_trial | BOOLEAN | Пробный период |
+| package_option_id | INTEGER FK | Вариант подписки |
+| status | TEXT | active/expired/cancelled/trial |
 | starts_at | TIMESTAMP | Начало |
 | expires_at | TIMESTAMP | Конец (NULL = навсегда) |
-| status | TEXT | active/expired/cancelled/trial |
 | auto_kicked | BOOLEAN | Был автокик |
 | notified_3days | BOOLEAN | Уведомлён за 3 дня |
 | notified_1day | BOOLEAN | Уведомлён за 1 день |
+| granted_by | BIGINT | Кто выдал (admin telegram_id) |
 | created_at | TIMESTAMP | Создан |
 
 ---
@@ -190,15 +183,17 @@ trial_enabled         - пробный период включён глобал�
 | id | INTEGER PK | ID |
 | user_id | INTEGER FK | Юзер |
 | package_option_id | INTEGER FK | Вариант подписки |
-| subscription_id | INTEGER FK | Подписка (после оплаты) |
+| subscription_id | INTEGER FK | Подписка |
 | network | TEXT | ton / trc20 |
 | wallet_address | TEXT | Адрес кошелька |
-| tx_hash | TEXT | Hash транзакции |
+| tx_hash | TEXT UNIQUE | Hash транзакции |
 | amount | REAL | Сумма USDT |
 | original_amount | REAL | Сумма до скидки |
 | promocode_id | INTEGER | Промокод (если был) |
-| status | TEXT | pending/checking/paid/failed/expired/manual |
-| check_attempts | INTEGER | Попыток проверки |
+| status | TEXT | pending/checking/confirmed/failed/manual |
+| payment_method | TEXT | crypto / manual |
+| confirmed_by | BIGINT | Кто подтвердил (для manual) |
+| check_attempts | INTEGER | Количество проверок |
 | paid_at | TIMESTAMP | Оплачен |
 | created_at | TIMESTAMP | Создан |
 
@@ -243,6 +238,38 @@ trial_enabled         - пробный период включён глобал�
 | variables | TEXT | Доступные переменные |
 | updated_at | TIMESTAMP | Обновлено |
 
+**Ключи текстов:**
+```
+# messages
+welcome              - Приветствие
+language_prompt      - Выберите язык
+packages_list        - Список пакетов
+package_details      - Детали пакета
+payment_prompt       - Инструкция по оплате
+payment_success      - Оплата прошла
+payment_failed       - Оплата не найдена
+subscription_active  - Подписка активирована
+subscription_expiring_3d - Истекает через 3 дня
+subscription_expiring_1d - Истекает завтра
+subscription_expired - Подписка истекла
+trial_started        - Пробный период начат
+promocode_applied    - Промокод применён
+promocode_invalid    - Неверный промокод
+
+# buttons
+btn_packages         - Пакеты
+btn_subscriptions    - Мои подписки
+btn_promocode        - Промокод
+btn_faq              - FAQ
+btn_language         - Язык
+btn_support          - Поддержка
+btn_back             - Назад
+btn_pay              - Оплатить
+btn_cancel           - Отмена
+btn_renew            - Продлить
+btn_links            - Ссылки на каналы
+```
+
 ---
 
 ### Таблица: `faq_items`
@@ -256,6 +283,22 @@ trial_enabled         - пробный период включён глобал�
 | sort_order | INTEGER | Порядок |
 | is_active | BOOLEAN | Активен |
 | created_at | TIMESTAMP | Создан |
+
+---
+
+### Таблица: `tasks` (очередь для userbot)
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER PK | ID |
+| type | TEXT | invite / kick |
+| user_telegram_id | BIGINT | Telegram ID юзера |
+| channel_id | BIGINT | Telegram ID канала |
+| payload | TEXT | JSON дополнительные данные |
+| status | TEXT | pending/processing/completed/failed |
+| attempts | INTEGER | Количество попыток |
+| error | TEXT | Текст ошибки |
+| created_at | TIMESTAMP | Создан |
+| processed_at | TIMESTAMP | Обработан |
 
 ---
 
@@ -278,20 +321,6 @@ trial_enabled         - пробный период включён глобал�
 
 ---
 
-### Таблица: `tasks` (очередь для userbot)
-| Поле | Тип | Описание |
-|------|-----|----------|
-| id | INTEGER PK | ID |
-| type | TEXT | invite / kick |
-| payload | TEXT | JSON с данными |
-| status | TEXT | pending/processing/completed/failed |
-| attempts | INTEGER | Количество попыток |
-| error | TEXT | Текст ошибки |
-| created_at | TIMESTAMP | Создан |
-| processed_at | TIMESTAMP | Обработан |
-
----
-
 ### Таблица: `admin_logs`
 | Поле | Тип | Описание |
 |------|-----|----------|
@@ -301,6 +330,69 @@ trial_enabled         - пробный период включён глобал�
 | target_user_id | INTEGER | На кого (user.id) |
 | details | TEXT | JSON детали |
 | created_at | TIMESTAMP | Когда |
+
+---
+
+## 🤖 TELEGRAM БОТ — ФИКСИРОВАННАЯ СТРУКТУРА
+
+### Флоу пользователя:
+
+```
+/start
+    │
+    ▼
+[Выбор языка: 🇷🇺 / 🇬🇧]
+    │
+    ▼
+┌─────────────────────────┐
+│     ГЛАВНОЕ МЕНЮ        │
+├─────────────────────────┤
+│ [📦 Пакеты]             │
+│ [💳 Мои подписки]       │
+│ [🎁 Промокод]  *        │
+│ [❓ FAQ]                │
+│ [🌐 Язык]               │
+│ [💬 Поддержка]          │
+└─────────────────────────┘
+    * если включён в настройках
+```
+
+### Флоу покупки:
+
+```
+[📦 Пакеты] → Список пакетов → Детали пакета
+    │
+    ▼
+Выбор срока: [30 дней $25] [90 дней $60] [1 год $200]
+    │
+    ▼
+Выбор сети: [TON] [TRC20]
+    │
+    ▼
+Показ адреса кошелька + инструкция
+    │
+    ▼
+Юзер отправляет hash транзакции (текстом)
+    │
+    ▼
+Проверка через API → Успех → Создание подписки → Invite в каналы
+```
+
+### "Мои подписки":
+
+```
+[💳 Мои подписки]
+    │
+    ▼
+┌─────────────────────────────────┐
+│ 📦 Премиум                      │
+│ ✅ Активна до: 15.02.2025       │
+│ Осталось: 24 дня                │
+│                                 │
+│ [🔗 Ссылки на каналы]           │
+│ [🔄 Продлить]                   │
+└─────────────────────────────────┘
+```
 
 ---
 
@@ -350,7 +442,6 @@ telegram-channel-bot/
 │   │   ├── __init__.py
 │   │   ├── base.py
 │   │   ├── settings.py
-│   │   ├── wallet.py
 │   │   ├── channel.py
 │   │   ├── package.py
 │   │   ├── user.py
@@ -359,18 +450,18 @@ telegram-channel-bot/
 │   │   ├── promocode.py
 │   │   ├── text.py
 │   │   ├── faq.py
-│   │   ├── broadcast.py
 │   │   ├── task.py
+│   │   ├── broadcast.py
 │   │   └── admin_log.py
 │   │
-│   ├── handlers/                   # Хендлеры
+│   ├── handlers/
 │   │   ├── __init__.py
 │   │   ├── start.py
 │   │   ├── menu.py
 │   │   ├── packages.py
 │   │   ├── payment.py
+│   │   ├── subscriptions.py
 │   │   ├── promocode.py
-│   │   ├── subscription.py
 │   │   ├── faq.py
 │   │   ├── language.py
 │   │   └── admin.py
@@ -384,7 +475,6 @@ telegram-channel-bot/
 │   │   ├── package.py
 │   │   ├── payment.py
 │   │   ├── subscription.py
-│   │   ├── faq.py
 │   │   ├── language.py
 │   │   └── admin.py
 │   │
@@ -398,7 +488,7 @@ telegram-channel-bot/
 │   │
 │   ├── services/
 │   │   ├── __init__.py
-│   │   ├── content.py              # Контент из БД
+│   │   ├── content.py              # Работа с таблицей texts
 │   │   ├── blockchain.py           # TON/TRC20 проверка
 │   │   ├── subscription.py
 │   │   ├── subscription_checker.py
@@ -415,7 +505,6 @@ telegram-channel-bot/
 │   ├── run.py
 │   ├── config.py
 │   ├── client.py
-│   ├── task_processor.py           # Обработка очереди tasks
 │   └── actions/
 │       ├── __init__.py
 │       ├── invite.py
@@ -437,55 +526,32 @@ telegram-channel-bot/
 │   │   ├── payments.py
 │   │   ├── promocodes.py
 │   │   ├── content.py              # texts + faq
-│   │   ├── settings.py
 │   │   ├── broadcasts.py
+│   │   ├── settings.py
 │   │   ├── export.py
 │   │   └── backup.py
 │   │
 │   └── schemas/
 │       ├── __init__.py
-│       ├── package.py
-│       ├── channel.py
-│       ├── user.py
-│       ├── subscription.py
-│       ├── payment.py
-│       ├── promocode.py
-│       ├── content.py
-│       ├── settings.py
-│       └── broadcast.py
+│       └── ... (Pydantic schemas)
 │
 ├── frontend/                       # React админка
 │   ├── package.json
 │   ├── vite.config.js
 │   ├── tailwind.config.js
-│   ├── index.html
 │   └── src/
 │       ├── main.jsx
 │       ├── App.jsx
-│       ├── index.css
-│       │
-│       ├── api/
-│       ├── context/
-│       │   └── ThemeContext.jsx
-│       ├── components/
-│       │   ├── Layout.jsx
-│       │   ├── Sidebar.jsx
-│       │   ├── Header.jsx
-│       │   ├── ThemeToggle.jsx
-│       │   ├── StatsCard.jsx
-│       │   ├── Chart.jsx
-│       │   ├── DataTable.jsx
-│       │   └── Modal.jsx
-│       │
-│       └── pages/
-│           ├── Dashboard.jsx
-│           ├── Packages/
-│           ├── Users/
-│           ├── Payments/
-│           ├── Promocodes/
-│           ├── Content/
-│           ├── Broadcasts/
-│           └── Settings/
+│       ├── pages/
+│       │   ├── Dashboard.jsx
+│       │   ├── Packages/           # Конструктор пакетов
+│       │   ├── Users/
+│       │   ├── Payments/
+│       │   ├── Promocodes/
+│       │   ├── Content/            # Тексты + FAQ
+│       │   ├── Broadcasts/
+│       │   └── Settings/
+│       └── components/
 │
 ├── scripts/
 │   ├── setup_db.py
@@ -493,15 +559,6 @@ telegram-channel-bot/
 │   └── generate_session.py
 │
 └── Windows .bat файлы
-    ├── install.bat
-    ├── start_bot.bat
-    ├── start_admin.bat
-    ├── start_userbot.bat
-    ├── start_frontend.bat
-    ├── start_all.bat
-    ├── stop_all.bat
-    ├── backup_db.bat
-    └── generate_session.bat
 ```
 
 ---
@@ -518,12 +575,12 @@ USERBOT_API_HASH=your_api_hash
 USERBOT_PHONE=+79001234567
 USERBOT_SESSION_STRING=
 
-# === CRYPTO WALLETS ===
-TON_WALLET=UQBxxxxxxxxxxxxxxxxxxxxxxxxx
-TRC20_WALLET=TXxxxxxxxxxxxxxxxxxxxxxxxxx
-
 # === ADMIN (Telegram IDs через запятую) ===
 ADMIN_IDS=123456789,987654321
+
+# === CRYPTO WALLETS ===
+TON_WALLET=UQBxxxxxxxxxxxxxxxxxxxxxx
+TRC20_WALLET=TXxxxxxxxxxxxxxxxxxxxxxx
 
 # === DATABASE ===
 DATABASE_PATH=./data/bot.db
@@ -540,128 +597,33 @@ SECRET_KEY=your-super-secret-key-change-this
 
 ---
 
-## 🤖 ФУНКЦИОНАЛ TELEGRAM БОТА
-
-### Фиксированная структура меню:
-
-```
-/start
-    │
-    ▼
-┌─────────────────────────────────────┐
-│ Выберите язык:                      │
-│ [🇷🇺 Русский]  [🇬🇧 English]         │
-└─────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────┐
-│ Главное меню                        │
-│                                     │
-│ [📦 Пакеты]                         │
-│ [💳 Мои подписки]                   │
-│ [🎁 Промокод]      ← если включён   │
-│ [❓ FAQ]                            │
-│ [🌐 Язык]                           │
-│ [💬 Поддержка]                      │
-└─────────────────────────────────────┘
-```
-
-### Флоу покупки:
-
-```
-[📦 Пакеты] → Выбор пакета → Выбор срока → Выбор сети (TON/TRC20)
-    → Показ адреса → Юзер переводит → Отправляет hash → Проверка
-    → Успех → Invite в каналы → Ссылки юзеру
-```
-
-### "Мои подписки":
-
-```
-┌─────────────────────────────────────┐
-│ 💳 Ваши подписки:                   │
-│                                     │
-│ ┌─────────────────────────────────┐ │
-│ │ 📦 Премиум                      │ │
-│ │ ✅ Активна до: 15.02.2025       │ │
-│ │                                 │ │
-│ │ [🔗 Ссылки на каналы]           │ │
-│ │ [🔄 Продлить]                   │ │
-│ └─────────────────────────────────┘ │
-└─────────────────────────────────────┘
-```
-
-### Команды:
-| Команда | Описание |
-|---------|----------|
-| `/start` | Запуск, выбор языка, меню |
-| `/menu` | Главное меню |
-| `/language` | Сменить язык |
-| `/admin` | Админ-панель (только для админов) |
-| `/stats` | Быстрая статистика (для админов) |
-
----
-
-## 🖥️ ФУНКЦИОНАЛ АДМИН-ПАНЕЛИ
-
-### Разделы:
-
-| Раздел | Что там |
-|--------|---------|
-| **📊 Dashboard** | Статистика, графики дохода |
-| **📦 Пакеты** | Конструктор: каналы + варианты сроков |
-| **👥 Пользователи** | Список, бан, выдача доступа |
-| **💳 Платежи** | История, ручное подтверждение |
-| **🎟️ Промокоды** | CRUD промокодов |
-| **📝 Контент** | Все тексты + FAQ |
-| **⚙️ Настройки** | On/off, кошельки |
-| **📨 Рассылки** | Создание и отправка |
-
-### Конструктор пакетов:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 📦 Премиум                                       [✏️][🗑️]  │
-├─────────────────────────────────────────────────────────────┤
-│ 📺 Каналы:                                                  │
-│ • @signals — Трейдинг сигналы                              │
-│ • @vip_signals — VIP сигналы                               │
-│                                    [+ Добавить канал]       │
-├─────────────────────────────────────────────────────────────┤
-│ 💰 Варианты подписки:                                       │
-│ │ 30 дней   │ $25   │ 🎁 Trial: 7 дней │ [✏️] [🗑️]       │
-│ │ 90 дней   │ $60   │ —                │ [✏️] [🗑️]       │
-│ │ 365 дней  │ $200  │ —                │ [✏️] [🗑️]       │
-│                              [+ Добавить вариант]           │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
 ## 📊 ЭТАПЫ РАЗРАБОТКИ (6 ЧАТОВ)
 
-### ЧАТ 1: Структура + БД
+### ЧАТ 1: Структура и база данных
 - Структура папок
+- requirements.txt, .env.example, .gitignore
 - SQLAlchemy модели (все таблицы)
 - Скрипт инициализации БД + дефолтные тексты
 - Базовый FastAPI с health check
-- `install.bat`, `start_admin.bat`
+- Windows .bat файлы (install, start_admin)
 
-### ЧАТ 2: Бот — ядро
+### ЧАТ 2: Telegram бот — Ядро
 - Aiogram 3 бот
-- Middleware: БД, юзер, бан, язык, rate limit
-- /start → язык → меню
-- Список пакетов → детали → выбор срока
 - Контент из БД (таблица texts)
-- `start_bot.bat`
+- Middleware: БД, юзер, бан, язык, rate limit
+- /start с выбором языка
+- Главное меню
+- Список пакетов → детали → выбор срока
+- Уведомления админам о новых юзерах
 
 ### ЧАТ 3: Оплата + Userbot
 - Выбор сети (TON/TRC20)
 - Показ адреса кошелька
 - Приём hash от юзера
 - Проверка транзакции через API
-- Pyrogram userbot: invite в каналы
+- Pyrogram userbot: invite/kick
 - Таблица tasks для очереди
-- `start_userbot.bat`, `generate_session.bat`
+- Полный цикл: оплата → доступ
 
 ### ЧАТ 4: Подписки + фичи
 - "Мои подписки" со ссылками на каналы
@@ -677,7 +639,7 @@ SECRET_KEY=your-super-secret-key-change-this
 - Dashboard: статистика, графики
 - CRUD: пакеты, каналы, юзеры, платежи, промокоды
 - Контент: тексты, FAQ
-- Настройки: кошельки, переключатели
+- Настройки
 - Рассылки
 - Экспорт CSV, бэкапы
 
@@ -686,9 +648,8 @@ SECRET_KEY=your-super-secret-key-change-this
 - Тёмная тема
 - Dashboard с графиками
 - Конструктор пакетов
-- Все страницы CRUD
 - Редактор контента
-- `start_frontend.bat`, `start_all.bat`
+- Все страницы
 
 ---
 
@@ -696,14 +657,14 @@ SECRET_KEY=your-super-secret-key-change-this
 
 ```cmd
 :: 1. Клонировать репозиторий
-git clone https://github.com/ironsan2kk-pixel/TGconst.git
-cd TGconst
+git clone https://github.com/your-repo/telegram-channel-bot.git
+cd telegram-channel-bot
 
 :: 2. Установка
 install.bat
 
 :: 3. Настроить .env
-:: Открыть .env и заполнить BOT_TOKEN, ADMIN_IDS, кошельки
+:: Заполнить BOT_TOKEN, ADMIN_IDS, кошельки
 
 :: 4. Запустить всё
 start_all.bat
