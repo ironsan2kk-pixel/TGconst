@@ -1,4 +1,4 @@
-"""Base model for SQLAlchemy."""
+"""Base model class for SQLAlchemy."""
 
 from datetime import datetime
 from sqlalchemy import DateTime, func
@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     """Base class for all models."""
+    
     pass
 
 
@@ -18,3 +19,9 @@ class TimestampMixin:
         default=func.now(),
         nullable=False
     )
+
+
+class SoftDeleteMixin:
+    """Mixin for soft delete functionality."""
+    
+    is_deleted: Mapped[bool] = mapped_column(default=False, nullable=False)
